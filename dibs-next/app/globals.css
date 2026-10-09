@@ -1,0 +1,144 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Dibs brand tokens. Light values per brand sheet; dark values for background, surface, text and navel per
+   brand sheet. The remaining dark values (grove, rind, muted, line and the tints) are picked to keep
+   WCAG 2.2 AA contrast on the dark surface. */
+:root {
+  --peel: #fbf7f0;
+  --surface: #ffffff;
+  --ink: #14201a;
+  --muted: #5b6660;
+  --grove: #1f3d2b;
+  --navel: #f27a1a;
+  --rind: #a34a06;
+  --zest: #f7c948;
+  --success: #2f7a4a;
+  --error: #b42318;
+  --line: #e6dfd3;
+  --sunk: #f3ede2;
+  --on-accent: #14201a;
+  --on-grove: #ffffff;
+  --success-bg: #e3f1e7;
+  --error-bg: #fbe5e2;
+  --warning-bg: #fff1d6;
+  --header-h: 64px;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --peel: #0f1712;
+    --surface: #17221b;
+    --ink: #eef2ec;
+    --muted: #9aa59e;
+    --grove: #3b7a55;
+    --navel: #ff8a2a;
+    --rind: #ffa45c;
+    --success: #5cc98a;
+    --error: #ff8a80;
+    --line: #2a3a30;
+    --sunk: #1e2b23;
+    --success-bg: #183324;
+    --error-bg: #3a1a17;
+    --warning-bg: #3a2a12;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --peel: #0f1712;
+  --surface: #17221b;
+  --ink: #eef2ec;
+  --muted: #9aa59e;
+  --grove: #3b7a55;
+  --navel: #ff8a2a;
+  --rind: #ffa45c;
+  --success: #5cc98a;
+  --error: #ff8a80;
+  --line: #2a3a30;
+  --sunk: #1e2b23;
+  --success-bg: #183324;
+  --error-bg: #3a1a17;
+  --warning-bg: #3a2a12;
+  color-scheme: dark;
+}
+
+html {
+  /* Sticky header never covers a focused element (WCAG 2.2 Focus Not Obscured). */
+  scroll-padding-top: calc(var(--header-h) + 16px);
+  scroll-padding-bottom: 16px;
+}
+
+body {
+  background: var(--peel);
+  color: var(--ink);
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Focus: a 2px navel ring with an ink halo underneath, so it reads at 3:1 or better on every surface. */
+:focus-visible {
+  outline: 2px solid var(--navel);
+  outline-offset: 2px;
+  box-shadow:
+    0 0 0 2px var(--peel),
+    0 0 0 4px var(--ink);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--sunk) 0%, var(--line) 50%, var(--sunk) 100%);
+  background-size: 200% 100%;
+  animation: dibs-shimmer 1.2s linear infinite;
+}
+
+@keyframes dibs-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 150ms !important;
+    transition-property: opacity, color, background-color, border-color !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "extends": ["next/core-web-vitals", "prettier"],
+  "rules": {
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "Literal[value=/escrow/i]",
+        "message": "Payment holding is called Dibs Protect."
+      }
+    ]
+  }
+}
