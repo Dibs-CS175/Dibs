@@ -58,6 +58,7 @@ const item = (
   bookingId,
   label,
   size,
+  disposition: 'return',
   status,
   ...extra,
 });
@@ -85,7 +86,11 @@ export const bookings: SummerHoldBooking[] = [
     items: [
       item('si1', 'bk1', 'Mini storage tower', 'standard', 'pending'),
       item('si2', 'bk1', 'Box of books', 'standard', 'pending'),
-      item('si3', 'bk1', 'Road bike', 'large', 'pending'),
+      item('si3', 'bk1', 'Road bike', 'large', 'pending', {
+        disposition: 'sell',
+        askingPriceCents: 12000,
+        consignmentStatus: 'awaiting_checkin',
+      }),
     ],
     pickupSlotId: 'ps3',
     quote: holdQuote(2, 1),

@@ -4,8 +4,3 @@ out
 .env*.local
 next-env.d.ts
 *.tsbuildinfo
-.DS_Store
-npm-debug.log*
-.vercel
-coverage
-.env

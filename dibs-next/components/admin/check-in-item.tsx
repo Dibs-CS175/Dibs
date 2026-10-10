@@ -2,6 +2,8 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { formatMoney } from '@/lib/format';
 import { Camera, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -59,11 +61,20 @@ export function CheckInItem({
         <h3 id={`${id}-h`} className="font-sans text-lg font-bold">
           {item.label} <span className="text-sm font-normal text-muted">({item.size})</span>
         </h3>
-        <Badge
-          variant={item.status === 'checked_in' ? 'success' : item.status === 'pending' ? 'outline' : 'error'}
-        >
-          {STATUS_LABEL[item.status]}
-        </Badge>
+        <span className="flex flex-wrap justify-end gap-1">
+          {item.disposition === 'sell' ? (
+            <Badge variant="zest">
+              Sell{item.askingPriceCents !== undefined ? ` · ${formatMoney(item.askingPriceCents)}` : ''}
+            </Badge>
+          ) : null}
+          <Badge
+            variant={
+              item.status === 'checked_in' ? 'success' : item.status === 'pending' ? 'outline' : 'error'
+            }
+          >
+            {STATUS_LABEL[item.status]}
+          </Badge>
+        </span>
       </div>
 
       {closed ? (
@@ -72,6 +83,11 @@ export function CheckInItem({
           {item.status === 'checked_in'
             ? `In bin ${bins.find((b) => b.id === item.binId)?.label ?? ''}.`
             : item.conditionNote}
+          {item.status === 'checked_in' && item.disposition === 'sell' ? (
+            <Link href="/admin/consignment" className="font-semibold text-rind">
+              Create its listing
+            </Link>
+          ) : null}
         </p>
       ) : (
         <>

@@ -7,8 +7,11 @@ export interface BookingDraftInput {
   housingType: HousingType;
   address: string;
   items: StorageItemInput[];
+  /** Required when any item is marked to sell. */
+  consignmentTermsAccepted: boolean;
 }
 
+/** Errors: VALIDATION (for example a sell item priced under the consignment minimum). */
 export async function createBooking(input: BookingDraftInput): Promise<Result<SummerHoldBooking>> {
   // STUB(summerHold): replace with real implementation
   return simulate<SummerHoldBooking>({
@@ -24,6 +27,9 @@ export async function createBooking(input: BookingDraftInput): Promise<Result<Su
       label: i.label,
       size: i.size,
       status: 'pending',
+      disposition: i.disposition,
+      askingPriceCents: i.askingPriceCents ?? undefined,
+      consignmentStatus: i.disposition === 'sell' ? 'awaiting_checkin' : undefined,
     })),
   });
 }
@@ -43,11 +49,13 @@ export async function payDeposit(bookingId: string): Promise<Result<SummerHoldBo
   return simulate<SummerHoldBooking>({ ...bookings[0]!, id: bookingId, status: 'deposit_paid' });
 }
 
-/** Errors: DEADLINE_PASSED. */
+/** Errors: DEADLINE_PASSED, VALIDATION (sell item under the consignment minimum). */
 export async function updateBookingItems(
   bookingId: string,
   items: StorageItemInput[],
+  consignmentTermsAccepted: boolean,
 ): Promise<Result<MyBooking>> {
+  void consignmentTermsAccepted;
   // STUB(summerHold): replace with real implementation
   return simulate<MyBooking>({
     ...myBookingFixture,
@@ -60,6 +68,9 @@ export async function updateBookingItems(
         label: i.label,
         size: i.size,
         status: 'pending',
+        disposition: i.disposition,
+        askingPriceCents: i.askingPriceCents ?? undefined,
+        consignmentStatus: i.disposition === 'sell' ? 'awaiting_checkin' : undefined,
       })),
     },
   });

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { ChevronLeft, Flag, MessageCircle, PackageX, Tag } from 'lucide-react';
+import { ChevronLeft, Flag, MessageCircle, PackageX, Tag, Warehouse } from 'lucide-react';
 import { ConditionBadge, HousingFitBadge, SourceBadge } from '@/components/listing/badges';
 import { Gallery } from '@/components/listing/gallery';
 import { HoldToDibs } from '@/components/listing/hold-to-dibs';
@@ -100,6 +100,15 @@ export default function ListingPage({ params }: { params: { id: string } }) {
             <SourceBadge source={l.source} />
           </div>
           <HousingFitBadge fit={l.housingFit} showExplain />
+          {l.source === 'consigned' ? (
+            <p className="flex items-start gap-2 rounded-card bg-sunk p-3 text-sm">
+              <Warehouse className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+              <span>
+                Dibs is the seller. You collect it at the storage unit during a pickup window you choose after
+                calling dibs. Bring help for large items.
+              </span>
+            </p>
+          ) : null}
 
           {isOwn ? (
             <div className="flex flex-col gap-3 rounded-card bg-sunk p-4">

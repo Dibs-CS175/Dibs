@@ -16,6 +16,7 @@ const items = (bookingId: string, labels: [string, StorageItem['size']][]): Stor
     label,
     size,
     status: 'pending',
+    disposition: 'return',
   }));
 
 const stop = (
@@ -207,6 +208,7 @@ const storedItem = (id: string, label: string, binId: string): StorageItem => ({
   label,
   size: 'standard',
   status: 'stored',
+  disposition: 'return',
   binId,
 });
 

@@ -7,7 +7,8 @@ import { CalendarX, CheckCircle2, ChevronLeft, ShieldCheck } from 'lucide-react'
 import { PageHeader } from '@/components/layout/page-header';
 import { QuoteLines } from '@/components/listing/quote-lines';
 import { EmptyState, ErrorState } from '@/components/states';
-import { ItemsEditor } from '@/components/summer-hold/items-editor';
+import { ConsignmentTermsAgreement } from '@/components/summer-hold/consignment-terms';
+import { ItemsEditor, blankItem, itemsComplete } from '@/components/summer-hold/items-editor';
 import { SlotPicker } from '@/components/summer-hold/slot-picker';
 import { Button } from '@/components/ui/button';
 import { Field, FormError } from '@/components/ui/field';
@@ -16,11 +17,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Stepper } from '@/components/ui/stepper';
 import { choosePickupSlot, createBooking, payDeposit } from '@/lib/actions/summerHold';
 import { HOUSING_TYPES } from '@/lib/config/app';
-import { formatWindow } from '@/lib/format';
+import { formatMoney, formatWindow } from '@/lib/format';
 import { useAction, useQuery } from '@/lib/hooks';
 import { getSummerHoldQuote } from '@/lib/queries/pricing';
 import { getPickupSlots } from '@/lib/queries/summerHold';
 import { getSettings } from '@/lib/queries/users';
+import { getConsignmentTerms } from '@/lib/queries/consignment';
 import { messageFor, ok } from '@/lib/result';
 import type { HousingType, Quote, SlotView, StorageItemInput } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -39,12 +41,15 @@ export default function BookSummerHoldPage() {
   const [done, setDone] = useState(false);
   const [housing, setHousing] = useState<HousingType | ''>('');
   const [address, setAddress] = useState('');
-  const [items, setItems] = useState<StorageItemInput[]>([{ label: '', size: 'standard' }]);
+  const [items, setItems] = useState<StorageItemInput[]>([blankItem()]);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const selling = items.some((i) => i.disposition === 'sell');
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [slotId, setSlotId] = useState<string | null>(null);
   const [touched, setTouched] = useState(false);
 
   const settings = useQuery(() => getSettings(), []);
+  const terms = useQuery(() => getConsignmentTerms(), []);
   useEffect(() => {
     if (settings.state.status === 'data' && settings.state.data.housingType && !housing)
       setHousing(settings.state.data.housingType);
@@ -62,10 +67,19 @@ export default function BookSummerHoldPage() {
   const choose = useAction(choosePickupSlot);
   const pay = useAction(payDeposit);
   const serverError = create.error ?? choose.error ?? pay.error;
+  const minPrice = terms.state.status === 'data' ? terms.state.data.minAskingPriceCents : undefined;
+  const errors = {
+    ...ERRORS,
+    ...(selling && minPrice !== undefined
+      ? {
+          VALIDATION: `Check your items. Items to sell need an asking price of at least ${formatMoney(minPrice)}.`,
+        }
+      : {}),
+  };
 
   const valid = [
     housing !== '' && address.trim() !== '',
-    items.length > 0 && items.every((i) => i.label.trim() !== ''),
+    itemsComplete(items) && (!selling || termsAccepted),
     quote.state.status === 'data',
     slotId !== null,
     true,
@@ -75,7 +89,12 @@ export default function BookSummerHoldPage() {
     setTouched(true);
     if (!valid[step]) return;
     if (step === 1 && housing) {
-      const r = await create.run({ housingType: housing, address, items });
+      const r = await create.run({
+        housingType: housing,
+        address,
+        items,
+        consignmentTermsAccepted: selling && termsAccepted,
+      });
       if (!r?.ok) return;
       setBookingId(r.data.id);
     }
@@ -114,6 +133,15 @@ export default function BookSummerHoldPage() {
           {chosenSlot ? `Pickup: ${formatWindow(chosenSlot.startsAt, chosenSlot.endsAt)}. ` : null}
           We’ll text you when the driver is on the way.
         </p>
+        {selling ? (
+          <p className="text-muted">
+            Items you’re selling get listed after check-in.{' '}
+            <Link href="/summer-hold/consigned" className="font-semibold text-rind">
+              Track them in Consigned items
+            </Link>
+            .
+          </p>
+        ) : null}
         <Button asChild size="lg">
           <Link href="/summer-hold/booking">View my booking</Link>
         </Button>
@@ -184,7 +212,25 @@ export default function BookSummerHoldPage() {
           </>
         ) : null}
 
-        {step === 1 ? <ItemsEditor items={items} onChange={setItems} showErrors={touched} /> : null}
+        {step === 1 ? (
+          <>
+            <ItemsEditor items={items} onChange={setItems} showErrors={touched} minPriceCents={minPrice} />
+            {selling ? (
+              terms.state.status === 'loading' ? (
+                <Skeleton className="h-48 rounded-card" />
+              ) : terms.state.status === 'error' ? (
+                <ErrorState message={terms.state.error.message} onRetry={terms.retry} />
+              ) : (
+                <ConsignmentTermsAgreement
+                  terms={terms.state.data}
+                  accepted={termsAccepted}
+                  onAccept={setTermsAccepted}
+                  showError={touched}
+                />
+              )
+            ) : null}
+          </>
+        ) : null}
 
         {step === 2 ? (
           quote.state.status === 'loading' ? (
@@ -240,7 +286,7 @@ export default function BookSummerHoldPage() {
           </>
         ) : null}
 
-        <FormError message={serverError ? messageFor(serverError, ERRORS) : null} />
+        <FormError message={serverError ? messageFor(serverError, errors) : null} />
 
         <div className="flex justify-between gap-3 border-t border-line pt-4">
           <Button variant="secondary" disabled={step === 0 || pending} onClick={() => setStep((s) => s - 1)}>

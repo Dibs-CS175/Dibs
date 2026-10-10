@@ -38,7 +38,7 @@ export async function getSummerHoldQuote(
   return simulate<Quote>({
     lines: [
       ...items.map((i) => ({
-        label: `${i.label || 'Item'} (${i.size})`,
+        label: `${i.label || 'Item'} (${i.size}${i.disposition === 'sell' ? ', to sell' : ''})`,
         cents: i.size === 'large' ? SUMMER_HOLD_LARGE_ITEM_CENTS : SUMMER_HOLD_STANDARD_ITEM_CENTS,
       })),
       ...(housingType === 'off_campus'

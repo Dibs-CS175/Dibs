@@ -1,6 +1,6 @@
 import { simulate } from '@/lib/dev';
 import { listings } from '@/lib/fixtures/listings';
-import { orderExtras, orders } from '@/lib/fixtures/orders';
+import { orderExtras, orders, storageExtras } from '@/lib/fixtures/orders';
 import { me, users } from '@/lib/fixtures/users';
 import type { Result } from '@/lib/result';
 import type { Order, OrderDetail, OrderSummary } from '@/lib/types';
@@ -25,5 +25,13 @@ export async function getMyOrders(): Promise<Result<OrderSummary[]>> {
 export async function getOrder(orderId: string): Promise<Result<OrderDetail>> {
   // STUB(orders): replace with real implementation
   const o = orders.find((x) => x.id === orderId) ?? orders[0]!;
-  return simulate<OrderDetail>({ ...summary(o), ...orderExtras[o.id]! });
+  return simulate<OrderDetail>({
+    ...summary(o),
+    ...orderExtras[o.id]!,
+    ...(storageExtras[o.id] ?? {
+      pickupAtStorage: false,
+      storagePickupSlot: null,
+      canChooseStorageSlot: false,
+    }),
+  });
 }

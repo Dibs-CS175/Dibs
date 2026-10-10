@@ -99,6 +99,18 @@ export const orders: Order[] = [
     meetupTime: '2026-09-30T20:00:00Z',
     createdAt: '2026-09-30T17:00:00Z',
   },
+  {
+    // Consigned item: Dibs is the seller and the buyer collects at the storage unit.
+    id: 'o9',
+    listingId: 'l45',
+    buyerId: 'u_me',
+    sellerId: 'u_goods',
+    status: 'held',
+    quote: quote(9000),
+    handoffCodeVisibleToBuyer: '5530',
+    meetupSpot: 'Arroyo Self Storage, Unit 14 (front office)',
+    createdAt: '2026-10-08T16:00:00Z',
+  },
 ];
 
 const done = (label: string, at: string): TimelineStep => ({ label, at, state: 'done' });
@@ -179,6 +191,17 @@ export const orderExtras: Record<
     canReport: false,
     needsRating: false,
   },
+  o9: {
+    timeline: [
+      done('Dibs called, payment held by Dibs Protect', '2026-10-08T16:00:00Z'),
+      cur('Choose a pickup window at the storage unit'),
+      next('Show your handoff code to Dibs staff'),
+      next('Done'),
+    ],
+    canCancel: true,
+    canReport: true,
+    needsRating: false,
+  },
   o8: {
     timeline: [
       done('Dibs called', '2026-09-30T17:00:00Z'),
@@ -189,6 +212,14 @@ export const orderExtras: Record<
     canReport: false,
     needsRating: false,
   },
+};
+
+/** Storage pickup details for consigned orders. Orders not listed here are student-to-student meetups. */
+export const storageExtras: Record<
+  string,
+  Pick<OrderDetail, 'pickupAtStorage' | 'storagePickupSlot' | 'canChooseStorageSlot'>
+> = {
+  o9: { pickupAtStorage: true, storagePickupSlot: null, canChooseStorageSlot: true },
 };
 
 export const ratings: Rating[] = [

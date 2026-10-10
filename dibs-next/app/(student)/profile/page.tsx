@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Archive, BadgeCheck, Heart, LogOut, Package, Tag } from 'lucide-react';
+import { Archive, BadgeCheck, HandCoins, Heart, LogOut, Package, Tag } from 'lucide-react';
 import { ListingCard } from '@/components/listing/listing-card';
 import { OrderRow } from '@/components/orders/order-row';
 import { SettingsForm } from '@/components/profile/settings-form';
@@ -14,11 +14,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toggleSave } from '@/lib/actions/listings';
 import { signOut, updateSettings } from '@/lib/actions/users';
-import { formatDate, formatWindow, shortName } from '@/lib/format';
+import { formatDate, formatMoney, formatWindow, shortName } from '@/lib/format';
 import { useAction, useQuery } from '@/lib/hooks';
 import { getMyListings, getSavedListings } from '@/lib/queries/listings';
 import { getMyOrders } from '@/lib/queries/orders';
 import { getMyBooking } from '@/lib/queries/summerHold';
+import { getMyConsignments, getMyPayoutMethod } from '@/lib/queries/consignment';
+import { startPayoutSetup } from '@/lib/actions/consignment';
+import { ConsignmentStatusBadge } from '@/components/consignment/consignment-status';
+import { PayoutMethodCard } from '@/components/consignment/payout-method-card';
 import { getSettings } from '@/lib/queries/users';
 import { useSession } from '@/lib/session';
 import type { ListingCardView } from '@/lib/types';
@@ -65,6 +69,9 @@ export default function ProfilePage() {
   const orders = useQuery(() => getMyOrders(), []);
   const booking = useQuery(() => getMyBooking(), []);
   const settings = useQuery(() => getSettings(), []);
+  const consigned = useQuery(() => getMyConsignments(), []);
+  const payout = useQuery(() => getMyPayoutMethod(), []);
+  const setup = useAction(startPayoutSetup);
   const save = useAction(updateSettings);
   const out = useAction(signOut);
   const unsave = useAction(toggleSave);
@@ -107,6 +114,7 @@ export default function ProfilePage() {
           <TabsTrigger value="orders">Orders</TabsTrigger>
           <TabsTrigger value="saved">Saved</TabsTrigger>
           <TabsTrigger value="summer">Summer Hold</TabsTrigger>
+          <TabsTrigger value="consigned">Consigned</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -184,6 +192,40 @@ export default function ProfilePage() {
           )}
         </TabsContent>
 
+        <TabsContent value="consigned">
+          {consigned.state.status === 'loading' ? (
+            <ListSkeleton />
+          ) : consigned.state.status === 'error' ? (
+            <ErrorState message={consigned.state.error.message} onRetry={consigned.retry} />
+          ) : consigned.state.data.length === 0 ? (
+            <EmptyState
+              icon={HandCoins}
+              text="Nothing consigned. Mark Summer Hold items as Sell and Dibs sells them for you."
+              actionLabel="Book Summer Hold"
+              href="/summer-hold/book"
+            />
+          ) : (
+            <div className="flex flex-col gap-3">
+              <ul className="flex flex-col divide-y divide-line rounded-card border border-line bg-surface">
+                {consigned.state.data.map((c) => (
+                  <li key={c.item.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+                    <span className="min-w-0 font-semibold">{c.item.label}</span>
+                    <span className="flex items-center gap-2">
+                      {c.payout ? (
+                        <span className="tabular text-sm">{formatMoney(c.payout.totalCents)}</span>
+                      ) : null}
+                      <ConsignmentStatusBadge status={c.status} />
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <Button asChild className="w-fit">
+                <Link href="/summer-hold/consigned">Manage consigned items</Link>
+              </Button>
+            </div>
+          )}
+        </TabsContent>
+
         <TabsContent value="settings">
           {settings.state.status === 'loading' ? (
             <Skeleton className="h-64 max-w-[560px] rounded-card" />
@@ -203,6 +245,26 @@ export default function ProfilePage() {
               }}
             />
           )}
+          <div className="mt-8 max-w-[560px]">
+            {payout.state.status === 'loading' ? (
+              <Skeleton className="h-36 rounded-card" />
+            ) : payout.state.status === 'error' ? (
+              <ErrorState message={payout.state.error.message} onRetry={payout.retry} />
+            ) : (
+              <PayoutMethodCard
+                method={payout.state.data}
+                pending={setup.pending}
+                error={setup.error?.message ?? null}
+                onSetup={async () => {
+                  const r = await setup.run();
+                  if (r?.ok) {
+                    payout.setData(r.data);
+                    toast.success('Payout method saved');
+                  }
+                }}
+              />
+            )}
+          </div>
         </TabsContent>
       </Tabs>
     </div>

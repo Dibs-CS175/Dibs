@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 /** Buyer view: the code the backend issued. Shown large so the seller can read it at the meetup. */
-export function HandoffCodeDisplay({ code }: { code: string }) {
+export function HandoffCodeDisplay({ code, note }: { code: string; note?: string }) {
   return (
     <div className="flex flex-col items-center gap-2 rounded-card bg-grove p-6 text-on-grove">
       <span className="flex items-center gap-2 text-sm font-semibold">
@@ -20,7 +20,7 @@ export function HandoffCodeDisplay({ code }: { code: string }) {
         {code}
       </span>
       <p className="max-w-xs text-center text-sm text-white/85">
-        Share this only after you have the item in hand. It releases payment to the seller.
+        {note ?? 'Share this only after you have the item in hand. It releases payment to the seller.'}
       </p>
     </div>
   );

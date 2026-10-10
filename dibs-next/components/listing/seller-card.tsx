@@ -23,7 +23,9 @@ export function SellerCard({ seller, source }: { seller: User; source: ListingSo
           <p className="text-sm text-muted">
             {source === 'goods'
               ? 'Checked and sold by Dibs'
-              : `Member since ${formatDate(seller.memberSince, { month: 'long', year: 'numeric' })}`}
+              : source === 'consigned'
+                ? 'Stored and sold by Dibs for a student'
+                : `Member since ${formatDate(seller.memberSince, { month: 'long', year: 'numeric' })}`}
           </p>
         </div>
         <span

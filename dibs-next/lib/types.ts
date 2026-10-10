@@ -21,7 +21,8 @@ export interface User {
   memberSince: ISODate;
 }
 
-export type ListingSource = 'student' | 'goods';
+/** `consigned`: a student's item stored and sold by Dibs, which is the seller of record. */
+export type ListingSource = 'student' | 'goods' | 'consigned';
 export type Condition = 'new' | 'like_new' | 'good' | 'fair';
 export type HousingFit = 'dorm' | 'apartment' | 'not_allowed';
 export type ListingStatus = 'active' | 'claimed' | 'sold' | 'removed';
@@ -126,6 +127,20 @@ export type BookingStatus =
   | 'cancelled';
 
 export type ItemSize = 'standard' | 'large';
+/** What happens to a stored item: delivered back in fall, or sold by Dibs on consignment. */
+export type ItemDisposition = 'return' | 'sell';
+export type ConsignmentStatus =
+  | 'awaiting_checkin'
+  | 'awaiting_listing'
+  | 'listed'
+  | 'sold'
+  | 'payout_pending'
+  | 'paid_out'
+  | 'unsold_to_goods'
+  | 'withdrawn'
+  | 'damaged';
+/** Who caused damage to a consigned item. The backend decides the outcome for each cause. */
+export type DamageCause = 'storage_facility' | 'dibs' | 'buyer';
 export type StorageItemStatus = 'pending' | 'checked_in' | 'stored' | 'returned' | 'refused' | 'damaged';
 
 export interface StorageItem {
@@ -134,6 +149,12 @@ export interface StorageItem {
   label: string;
   size: ItemSize;
   status: StorageItemStatus;
+  disposition: ItemDisposition;
+  /** Present when disposition is `sell`. */
+  askingPriceCents?: Cents;
+  /** Set once Dibs lists the item. */
+  listingId?: string;
+  consignmentStatus?: ConsignmentStatus;
   conditionPhoto?: string;
   conditionNote?: string;
   binId?: string;
@@ -152,7 +173,8 @@ export interface SummerHoldBooking {
   balanceDueAt: ISODate;
 }
 
-export type SlotKind = 'pickup' | 'return';
+/** `storage_pickup`: windows when buyers collect consigned items at the storage unit. */
+export type SlotKind = 'pickup' | 'return' | 'storage_pickup';
 
 export interface Slot {
   id: string;
@@ -281,6 +303,10 @@ export interface OrderSummary {
 }
 
 export interface OrderDetail extends OrderSummary {
+  /** True for consigned items: the buyer collects at the storage unit during a pickup window. */
+  pickupAtStorage: boolean;
+  storagePickupSlot: SlotView | null;
+  canChooseStorageSlot: boolean;
   timeline: TimelineStep[];
   canCancel: boolean;
   canReport: boolean;
@@ -320,6 +346,55 @@ export interface MyBooking {
 export interface StorageItemInput {
   label: string;
   size: ItemSize;
+  disposition: ItemDisposition;
+  askingPriceCents: Cents | null;
+}
+
+/** Consignment terms as the backend states them. The UI shows these; it never applies them. */
+export interface ConsignmentTerms {
+  /** Dibs' share of the sale price, in basis points (6000 = 60%). */
+  commissionBps: number;
+  /** The student's share of the sale price, in basis points. */
+  ownerShareBps: number;
+  minAskingPriceCents: Cents;
+  unsoldPolicy: string;
+  damagePolicy: string;
+  /** Last day a consigned item stays listed before going to Dibs Goods. */
+  listUntil: ISODate;
+}
+
+export interface ConsignmentView {
+  item: StorageItem;
+  bookingId: string;
+  listing: Pick<Listing, 'id' | 'title' | 'photos' | 'priceCents' | 'status'> | null;
+  status: ConsignmentStatus;
+  /** Sale price, commission and payout lines. Null until the item sells. */
+  payout: Quote | null;
+  payoutSentAt?: ISODate;
+  listUntil: ISODate;
+  timeline: TimelineStep[];
+  canEditPrice: boolean;
+  canWithdraw: boolean;
+}
+
+export interface PayoutMethod {
+  status: 'not_set' | 'set';
+  /** Display label from the payment provider, e.g. "Bank account ending 4417". */
+  label: string | null;
+}
+
+/** Admin: a consigned item and its owner. */
+export interface ConsignmentAdminView extends ConsignmentView {
+  owner: Pick<User, 'id' | 'firstName' | 'lastInitial'>;
+  payoutMethod: PayoutMethod;
+}
+
+export interface ConsignedListingInput {
+  title: string;
+  category: Category | '';
+  condition: Condition | '';
+  housingFit: HousingFit | '';
+  description: string;
 }
 
 export interface RouteStopView extends RouteStop {

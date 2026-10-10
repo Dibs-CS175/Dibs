@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Box, CalendarClock, CalendarX, PackageCheck, ShieldCheck, Truck } from 'lucide-react';
+import { Box, CalendarClock, CalendarX, HandCoins, PackageCheck, ShieldCheck, Truck } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { SlotAvailability } from '@/components/summer-hold/slot-picker';
 import { EmptyState, ErrorState } from '@/components/states';
@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@/lib/hooks';
 import { getPickupSlots } from '@/lib/queries/summerHold';
+import { getConsignmentTerms } from '@/lib/queries/consignment';
+import { ConsignmentTermsSummary } from '@/components/summer-hold/consignment-terms';
 import { useSession } from '@/lib/session';
 
 const STEPS = [
@@ -38,6 +40,7 @@ export default function SummerHoldPage() {
   const { state: session } = useSession();
   const signedIn = session.status === 'data' && session.data !== null;
   const { state, retry } = useQuery(() => getPickupSlots(), []);
+  const terms = useQuery(() => getConsignmentTerms(), []);
 
   return (
     <div className="container flex max-w-content flex-col gap-12 py-8 md:py-14">
@@ -78,6 +81,26 @@ export default function SummerHoldPage() {
           Pricing is per item, with standard and large sizes. Your quote shows every line before you pay, and
           the deposit is held by Dibs Protect.
         </p>
+      </section>
+
+      <section
+        aria-labelledby="sell-h"
+        className="flex flex-col gap-3 rounded-card border border-line bg-surface p-5"
+      >
+        <h2 id="sell-h" className="flex items-center gap-2 text-xl font-bold">
+          <HandCoins className="h-5 w-5 text-success" aria-hidden /> Don’t want it back? We’ll sell it.
+        </h2>
+        <p>
+          Mark any item as Sell when you book. We list it, sell it, hand it to the buyer and pay you your
+          share.
+        </p>
+        {terms.state.status === 'loading' ? (
+          <Skeleton className="h-28 rounded-input" />
+        ) : terms.state.status === 'error' ? (
+          <ErrorState message={terms.state.error.message} onRetry={terms.retry} />
+        ) : (
+          <ConsignmentTermsSummary terms={terms.state.data} />
+        )}
       </section>
 
       <section aria-labelledby="slots-h" className="flex flex-col gap-4">

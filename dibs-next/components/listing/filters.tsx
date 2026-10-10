@@ -163,7 +163,7 @@ export function FilterDrawer({
           <fieldset>
             <legend className="mb-2 font-semibold">Source</legend>
             <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Source">
-              {([undefined, 'student', 'goods'] as (ListingSource | undefined)[]).map((s) => (
+              {([undefined, 'student', 'goods', 'consigned'] as (ListingSource | undefined)[]).map((s) => (
                 <button
                   key={s ?? 'all'}
                   type="button"
@@ -177,7 +177,13 @@ export function FilterDrawer({
                       : 'border-line hover:bg-sunk',
                   )}
                 >
-                  {s === undefined ? 'All' : s === 'student' ? 'Students' : 'Goods'}
+                  {s === undefined
+                    ? 'All'
+                    : s === 'student'
+                      ? 'Students'
+                      : s === 'goods'
+                        ? 'Goods'
+                        : 'Consigned'}
                 </button>
               ))}
             </div>

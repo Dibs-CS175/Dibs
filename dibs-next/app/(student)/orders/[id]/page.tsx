@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { ChevronLeft, Flag, MapPin, PackageX, Star } from 'lucide-react';
+import { CalendarX, ChevronLeft, Flag, MapPin, PackageX, Star, Warehouse } from 'lucide-react';
 import { ConfirmSheet } from '@/components/confirm-sheet';
 import { ListingPhoto } from '@/components/listing/listing-photo';
 import { QuoteLines } from '@/components/listing/quote-lines';
@@ -15,12 +15,18 @@ import { Timeline } from '@/components/orders/timeline';
 import { EmptyState, ErrorState, PageSkeleton } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { cancelOrder, enterHandoffCode } from '@/lib/actions/orders';
+import { chooseStoragePickupSlot } from '@/lib/actions/consignment';
+import { getStoragePickupSlots } from '@/lib/queries/consignment';
+import { SlotPicker } from '@/components/summer-hold/slot-picker';
+import { FormError } from '@/components/ui/field';
+import { Skeleton } from '@/components/ui/skeleton';
 import { submitRating } from '@/lib/actions/ratings';
 import { reportProblem } from '@/lib/actions/reports';
-import { formatDateTime, shortName } from '@/lib/format';
+import { formatDateTime, formatWindow, shortName } from '@/lib/format';
 import { useAction, useQuery } from '@/lib/hooks';
 import { getOrder } from '@/lib/queries/orders';
-import { messageFor } from '@/lib/result';
+import { messageFor, ok } from '@/lib/result';
+import type { SlotView } from '@/lib/types';
 
 export default function OrderPage({ params }: { params: { id: string } }) {
   const { state, retry, setData } = useQuery(() => getOrder(params.id), [params.id]);
@@ -31,6 +37,13 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [rateOpen, setRateOpen] = useState(false);
+  const needSlots = state.status === 'data' && state.data.canChooseStorageSlot;
+  const storageSlots = useQuery(
+    () => (needSlots ? getStoragePickupSlots() : Promise.resolve(ok<SlotView[]>([]))),
+    [needSlots],
+  );
+  const chooseSlot = useAction(chooseStoragePickupSlot);
+  const [slotId, setSlotId] = useState<string | null>(null);
 
   if (state.status === 'loading') return <PageSkeleton />;
   if (state.status === 'error') {
@@ -78,7 +91,12 @@ export default function OrderPage({ params }: { params: { id: string } }) {
       </div>
 
       {o.status === 'held' && d.viewerRole === 'buyer' && o.handoffCodeVisibleToBuyer ? (
-        <HandoffCodeDisplay code={o.handoffCodeVisibleToBuyer} />
+        <HandoffCodeDisplay
+          code={o.handoffCodeVisibleToBuyer}
+          note={
+            d.pickupAtStorage ? 'Show this to Dibs staff when you collect. It completes the sale.' : undefined
+          }
+        />
       ) : null}
       {o.status === 'held' && d.viewerRole === 'seller' ? (
         <HandoffCodeEntry
@@ -98,7 +116,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         />
       ) : null}
 
-      {o.meetupSpot ? (
+      {o.meetupSpot && !d.pickupAtStorage ? (
         <p className="flex items-start gap-2 rounded-card bg-sunk p-4">
           <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           <span>
@@ -106,6 +124,72 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             {o.meetupTime ? ` · ${formatDateTime(o.meetupTime)}` : null}
           </span>
         </p>
+      ) : null}
+
+      {d.pickupAtStorage && o.status === 'held' ? (
+        <section
+          aria-labelledby="sp-h"
+          className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4"
+        >
+          <h2 id="sp-h" className="flex items-center gap-2 text-xl font-bold">
+            <Warehouse className="h-5 w-5" aria-hidden /> Pickup at the storage unit
+          </h2>
+          <p className="text-sm">{o.meetupSpot}</p>
+          {d.storagePickupSlot ? (
+            <p className="font-semibold">
+              {formatWindow(d.storagePickupSlot.startsAt, d.storagePickupSlot.endsAt)}
+            </p>
+          ) : d.canChooseStorageSlot ? (
+            storageSlots.state.status === 'loading' ? (
+              <Skeleton className="h-32 rounded-input" />
+            ) : storageSlots.state.status === 'error' ? (
+              <ErrorState message={storageSlots.state.error.message} onRetry={storageSlots.retry} />
+            ) : storageSlots.state.data.length === 0 ? (
+              <EmptyState
+                icon={CalendarX}
+                text="No pickup windows are open right now."
+                actionLabel="Check again"
+                onAction={storageSlots.retry}
+              />
+            ) : (
+              <>
+                <SlotPicker
+                  slots={storageSlots.state.data}
+                  value={slotId}
+                  onChange={setSlotId}
+                  name="storage-pickup"
+                />
+                <FormError
+                  message={
+                    chooseSlot.error
+                      ? messageFor(chooseSlot.error, {
+                          SLOT_FULL: 'That window just filled up. Pick another one.',
+                        })
+                      : null
+                  }
+                />
+                <Button
+                  className="w-fit"
+                  disabled={!slotId || chooseSlot.pending}
+                  onClick={async () => {
+                    if (!slotId) return;
+                    const r = await chooseSlot.run(o.id, slotId);
+                    if (r?.ok) {
+                      setData({ ...d, storagePickupSlot: r.data.slot, canChooseStorageSlot: false });
+                      toast.success('Pickup window saved');
+                    } else if (r?.error.code === 'SLOT_FULL') {
+                      setSlotId(null);
+                      storageSlots.retry();
+                    }
+                  }}
+                >
+                  {chooseSlot.pending ? 'Saving…' : 'Save pickup window'}
+                </Button>
+              </>
+            )
+          ) : null}
+          <p className="text-sm text-muted">If the item is damaged while you move it out, the sale stands.</p>
+        </section>
       ) : null}
 
       <section aria-labelledby="tl-h" className="flex flex-col gap-3">

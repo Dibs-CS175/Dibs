@@ -7,6 +7,9 @@ const BLURBS: Record<string, string> = {
   '/admin/routes': 'Move-out pickups by day and building. Mark stops and check items in.',
   '/admin/returns': 'Fall return windows and the return route.',
   '/admin/bins': 'Capacity and contents for every bin in both units.',
+  '/admin/consignment':
+    'Sell items from Summer Hold: create listings, buyer pickup windows, damage and unsold items.',
+  '/admin/payouts': 'Student payouts for sold consigned items. Mark each one sent.',
   '/admin/goods': 'Dibs Goods inventory: intake, hold, list, sell or dispose.',
   '/admin/reports': 'Open problem reports from orders and listings.',
 };

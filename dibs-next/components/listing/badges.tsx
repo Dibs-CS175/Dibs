@@ -23,5 +23,7 @@ export function ConditionBadge({ condition }: { condition: Condition }) {
 }
 
 export function SourceBadge({ source }: { source: ListingSource }) {
-  return source === 'goods' ? <Badge variant="zest">Dibs Goods</Badge> : null;
+  if (source === 'goods') return <Badge variant="zest">Dibs Goods</Badge>;
+  if (source === 'consigned') return <Badge variant="zest">Sold by Dibs</Badge>;
+  return null;
 }

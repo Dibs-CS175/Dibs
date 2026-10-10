@@ -56,3 +56,8 @@ export function labelFor<T extends string>(
 ): string {
   return list.find((x) => x.id === id)?.label ?? '';
 }
+
+/** Basis points as a percent label: 6000 becomes "60%". Display only. */
+export function formatPercent(bps: number): string {
+  return `${Number((bps / 100).toFixed(2))}%`;
+}
