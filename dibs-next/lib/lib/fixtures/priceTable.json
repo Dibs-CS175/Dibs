@@ -1,0 +1,164 @@
+[
+  {
+    "campusId": "riverside",
+    "_todo": "set from team research",
+    "startsAt": null,
+    "endsAt": null,
+    "itemStandardCents": 0,
+    "itemLargeCents": 0,
+    "standardBoxRule": {
+      "maxInches": [0, 0, 0],
+      "maxPounds": 0,
+      "_todo": "set from team research"
+    },
+    "registrationTiers": [
+      {
+        "key": "early",
+        "label": "Early registration",
+        "cents": 0,
+        "endsAt": null,
+        "_todo": "set from team research"
+      },
+      {
+        "key": "standard",
+        "label": "Standard registration",
+        "cents": 0,
+        "endsAt": null,
+        "_todo": "set from team research"
+      },
+      {
+        "key": "final",
+        "label": "Final days",
+        "cents": 0,
+        "endsAt": null,
+        "_todo": "set from team research"
+      }
+    ],
+    "cancelWindowDays": 0,
+    "balanceDueDate": null,
+    "fullService": {
+      "cents": 0,
+      "maxItems": 0,
+      "_todo": "set from team research"
+    },
+    "addOns": [
+      {
+        "key": "protect_plus",
+        "label": "Protect Plus",
+        "cents": 0,
+        "note": "Raises the coverage on every item in this booking.",
+        "_todo": "set from team research"
+      },
+      {
+        "key": "priority_window",
+        "label": "Priority pickup window",
+        "cents": 0,
+        "note": "A shorter, guaranteed pickup window.",
+        "_todo": "set from team research"
+      },
+      {
+        "key": "delivery",
+        "label": "Fall delivery",
+        "cents": 0,
+        "note": "We bring your items to your fall address within the delivery area.",
+        "_todo": "set from team research"
+      }
+    ],
+    "fees": {
+      "overweightCents": 0,
+      "repackCents": 0,
+      "changeOrNoShowCents": 0,
+      "offCampusPickupCents": 0,
+      "_todo": "set from team research"
+    },
+    "coveragePerItemCents": 0,
+    "marketplace": {
+      "buyerPct": 0,
+      "buyerFlatCents": 0,
+      "sellerPct": 0,
+      "_todo": "set from team research"
+    },
+    "salesTaxRate": 0
+  },
+  {
+    "campusId": "san-bernardino",
+    "_todo": "set from team research",
+    "startsAt": null,
+    "endsAt": null,
+    "itemStandardCents": 0,
+    "itemLargeCents": 0,
+    "standardBoxRule": {
+      "maxInches": [0, 0, 0],
+      "maxPounds": 0,
+      "_todo": "set from team research"
+    },
+    "registrationTiers": [
+      {
+        "key": "early",
+        "label": "Early registration",
+        "cents": 0,
+        "endsAt": null,
+        "_todo": "set from team research"
+      },
+      {
+        "key": "standard",
+        "label": "Standard registration",
+        "cents": 0,
+        "endsAt": null,
+        "_todo": "set from team research"
+      },
+      {
+        "key": "final",
+        "label": "Final days",
+        "cents": 0,
+        "endsAt": null,
+        "_todo": "set from team research"
+      }
+    ],
+    "cancelWindowDays": 0,
+    "balanceDueDate": null,
+    "fullService": {
+      "cents": 0,
+      "maxItems": 0,
+      "_todo": "set from team research"
+    },
+    "addOns": [
+      {
+        "key": "protect_plus",
+        "label": "Protect Plus",
+        "cents": 0,
+        "note": "Raises the coverage on every item in this booking.",
+        "_todo": "set from team research"
+      },
+      {
+        "key": "priority_window",
+        "label": "Priority pickup window",
+        "cents": 0,
+        "note": "A shorter, guaranteed pickup window.",
+        "_todo": "set from team research"
+      },
+      {
+        "key": "delivery",
+        "label": "Fall delivery",
+        "cents": 0,
+        "note": "We bring your items to your fall address within the delivery area.",
+        "_todo": "set from team research"
+      }
+    ],
+    "fees": {
+      "overweightCents": 0,
+      "repackCents": 0,
+      "changeOrNoShowCents": 0,
+      "offCampusPickupCents": 0,
+      "_todo": "set from team research"
+    },
+    "coveragePerItemCents": 0,
+    "marketplace": {
+      "buyerPct": 0,
+      "buyerFlatCents": 0,
+      "sellerPct": 0,
+      "_todo": "set from team research"
+    },
+    "salesTaxRate": 0
+  }
+]

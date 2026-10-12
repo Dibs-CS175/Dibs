@@ -1,0 +1,83 @@
+import type { OfferEvent } from '@/lib/types';
+
+/** Which offers students saw and picked. The team uses these to judge attach rates. */
+export const offerEvents: OfferEvent[] = [
+  {
+    id: 'oe1',
+    userId: 'u_me',
+    campusId: 'riverside',
+    offerKey: 'registration_tier:early',
+    shownAt: '2026-10-02T17:50:00Z',
+    chosen: true,
+  },
+  {
+    id: 'oe2',
+    userId: 'u_me',
+    campusId: 'riverside',
+    offerKey: 'full_service',
+    shownAt: '2026-10-02T17:52:00Z',
+    chosen: true,
+  },
+  {
+    id: 'oe3',
+    userId: 'u_me',
+    campusId: 'riverside',
+    offerKey: 'addon:protect_plus',
+    shownAt: '2026-10-02T17:53:00Z',
+    chosen: false,
+  },
+  {
+    id: 'oe4',
+    userId: 'u_me',
+    campusId: 'riverside',
+    offerKey: 'addon:priority_window',
+    shownAt: '2026-10-02T17:53:00Z',
+    chosen: false,
+  },
+  {
+    id: 'oe5',
+    userId: 'u_me',
+    campusId: 'riverside',
+    offerKey: 'addon:delivery',
+    shownAt: '2026-10-02T17:53:00Z',
+    chosen: false,
+  },
+  {
+    id: 'oe6',
+    userId: 'u_s05',
+    campusId: 'riverside',
+    offerKey: 'registration_tier:early',
+    shownAt: '2026-09-25T17:40:00Z',
+    chosen: true,
+  },
+  {
+    id: 'oe7',
+    userId: 'u_s05',
+    campusId: 'riverside',
+    offerKey: 'addon:protect_plus',
+    shownAt: '2026-09-25T17:44:00Z',
+    chosen: true,
+  },
+  {
+    id: 'oe8',
+    userId: 'u_s05',
+    campusId: 'riverside',
+    offerKey: 'addon:delivery',
+    shownAt: '2026-09-25T17:44:00Z',
+    chosen: true,
+  },
+  {
+    id: 'oe9',
+    userId: 'u_s09',
+    campusId: 'riverside',
+    offerKey: 'full_service',
+    shownAt: '2026-10-10T19:10:00Z',
+  },
+  {
+    id: 'oe10',
+    userId: 'u_s11',
+    campusId: 'san-bernardino',
+    offerKey: 'registration_tier:early',
+    shownAt: '2026-10-11T20:00:00Z',
+  },
+];
