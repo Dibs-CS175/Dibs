@@ -1,28 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { Wrench, X } from 'lucide-react';
-import { setDevState, useDevState, type DevRole, type StubMode, type StubScope } from '@/lib/dev/state';
-import { ERROR_CODES, type ErrorCode } from '@/lib/result';
-import { cn } from '@/lib/utils';
+import Link from 'next/link';
+import { PanelsTopLeft, Wrench, X } from 'lucide-react';
+import { useDevState } from '@/lib/dev/state';
+import { DevControls, devSummary } from './dev-controls';
 
-const ROLES: { id: DevRole; label: string }[] = [
-  { id: 'signed_out', label: 'Signed out' },
-  { id: 'student', label: 'Student' },
-  { id: 'admin', label: 'Admin' },
-];
-const MODES: { id: StubMode; label: string }[] = [
-  { id: 'normal', label: 'Normal' },
-  { id: 'empty', label: 'Empty' },
-  { id: 'error', label: 'Error' },
-  { id: 'slow', label: 'Slow (3 s)' },
-];
-
-/** Dev-only panel. Rendered when NEXT_PUBLIC_DEV_TOOLBAR=true. */
+/** Dev-only floating panel. Rendered when NEXT_PUBLIC_DEV_TOOLBAR=true. The full version lives at /dev. */
 export function DevToolbar() {
   const dev = useDevState();
   const [open, setOpen] = useState(false);
-  const select = 'min-h-[36px] w-full rounded-md border border-line bg-surface px-2 text-sm text-ink';
+  const summary = devSummary(dev);
 
   return (
     <div className="fixed bottom-3 left-3 z-[70] text-ink">
@@ -43,72 +31,23 @@ export function DevToolbar() {
               <X className="h-4 w-4" aria-hidden />
             </button>
           </div>
-          <div className="flex flex-col gap-2 text-sm">
-            <label className="flex flex-col gap-1 font-semibold">
-              Role
-              <select
-                className={select}
-                value={dev.role}
-                onChange={(e) => setDevState({ role: e.target.value as DevRole })}
-              >
-                {ROLES.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1 font-semibold">
-              Stub mode
-              <select
-                className={select}
-                value={dev.mode}
-                onChange={(e) => setDevState({ mode: e.target.value as StubMode })}
-              >
-                {MODES.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1 font-semibold">
-              Applies to
-              <select
-                className={select}
-                value={dev.scope}
-                onChange={(e) => setDevState({ scope: e.target.value as StubScope })}
-              >
-                <option value="all">Queries and actions</option>
-                <option value="actions">Actions only</option>
-              </select>
-            </label>
-            <label className={cn('flex flex-col gap-1 font-semibold', dev.mode !== 'error' && 'opacity-60')}>
-              Error code
-              <select
-                className={select}
-                value={dev.errorCode}
-                onChange={(e) => setDevState({ errorCode: e.target.value as ErrorCode })}
-              >
-                {ERROR_CODES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
+          <DevControls />
+          <Link
+            href="/dev"
+            onClick={() => setOpen(false)}
+            className="mt-3 inline-flex min-h-[36px] items-center gap-2 text-sm font-semibold underline underline-offset-2"
+          >
+            <PanelsTopLeft className="h-4 w-4" aria-hidden /> Open preview panel
+          </Link>
         </div>
       ) : (
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="inline-flex min-h-[40px] items-center gap-2 rounded-full border border-line bg-surface px-3 text-xs font-bold shadow-2"
-          aria-label={`Open dev toolbar. Role ${dev.role}, mode ${dev.mode}`}
+          className="inline-flex min-h-[40px] max-w-[calc(100vw-24px)] items-center gap-2 truncate rounded-full border border-line bg-surface px-3 text-xs font-bold shadow-2"
+          aria-label={`Open dev toolbar. ${summary}`}
         >
-          <Wrench className="h-4 w-4" aria-hidden /> {dev.role} · {dev.mode}
-          {dev.mode === 'error' ? ` · ${dev.errorCode}` : ''}
-          {dev.scope === 'actions' && dev.mode !== 'normal' ? ' · actions' : ''}
+          <Wrench className="h-4 w-4 shrink-0" aria-hidden /> {summary}
         </button>
       )}
     </div>

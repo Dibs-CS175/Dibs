@@ -1,39 +1,13 @@
-import { simulate } from '@/lib/dev';
-import { setDevState } from '@/lib/dev/state';
-import { me } from '@/lib/fixtures/users';
-import type { Result } from '@/lib/result';
-import type { HousingType, Session, Settings } from '@/lib/types';
+// Pages import from this file. Each function runs its Demo version (fixtures, lib/demo/actions/users.ts)
+// or its Live version (your code, lib/live/actions/users.ts), depending on the data source picked in
+// the preview panel (/dev). Nothing else belongs here.
 
-/** Sends a 6-digit code to a campus email. */
-export async function requestVerificationCode(
-  email: string,
-): Promise<Result<{ sentTo: string; resendAfterSeconds: number }>> {
-  // STUB(users): replace with real implementation
-  return simulate({ sentTo: email, resendAfterSeconds: 30 });
-}
+import { choose } from '@/lib/dev/choose';
+import * as demo from '@/lib/demo/actions/users';
+import * as live from '@/lib/live/actions/users';
 
-/** Checks the code and starts a session. */
-export async function verifyCode(email: string, code: string): Promise<Result<Session>> {
-  // STUB(users): replace with real implementation
-  void code;
-  const r = await simulate<Session>({ user: { ...me, email } });
-  if (r.ok) setDevState({ role: 'student' });
-  return r;
-}
-
-export async function setHousingType(housingType: HousingType): Promise<Result<Settings>> {
-  // STUB(users): replace with real implementation
-  return simulate<Settings>({ dibsGesture: 'hold', housingType });
-}
-
-export async function updateSettings(settings: Settings): Promise<Result<Settings>> {
-  // STUB(users): replace with real implementation
-  return simulate(settings);
-}
-
-export async function signOut(): Promise<Result<null>> {
-  // STUB(users): replace with real implementation
-  const r = await simulate(null);
-  if (r.ok) setDevState({ role: 'signed_out' });
-  return r;
-}
+export const requestVerificationCode = choose(demo.requestVerificationCode, live.requestVerificationCode);
+export const verifyCode = choose(demo.verifyCode, live.verifyCode);
+export const setHousingType = choose(demo.setHousingType, live.setHousingType);
+export const updateSettings = choose(demo.updateSettings, live.updateSettings);
+export const signOut = choose(demo.signOut, live.signOut);

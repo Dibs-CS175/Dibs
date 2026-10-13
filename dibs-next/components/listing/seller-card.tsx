@@ -1,8 +1,12 @@
-import { BadgeCheck, Star } from 'lucide-react';
+'use client';
+
+import { BadgeCheck } from 'lucide-react';
+import { useTimeZone } from '@/lib/campus';
 import { formatDate, shortName } from '@/lib/format';
 import type { ListingSource, User } from '@/lib/types';
 
 export function SellerCard({ seller, source }: { seller: User; source: ListingSource }) {
+  const tz = useTimeZone();
   return (
     <section
       aria-label="Seller"
@@ -18,22 +22,16 @@ export function SellerCard({ seller, source }: { seller: User; source: ListingSo
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-1 font-semibold">
             {shortName(seller)}{' '}
-            {seller.verified ? <BadgeCheck className="h-4 w-4 text-success" aria-label="Verified" /> : null}
+            {seller.verified ? (
+              <BadgeCheck className="h-4 w-4 text-success" aria-label="Verified student" />
+            ) : null}
           </p>
           <p className="text-sm text-muted">
             {source === 'goods'
               ? 'Checked and sold by Dibs'
-              : source === 'consigned'
-                ? 'Stored and sold by Dibs for a student'
-                : `Member since ${formatDate(seller.memberSince, { month: 'long', year: 'numeric' })}`}
+              : `Member since ${formatDate(seller.memberSince, tz, { month: 'long', year: 'numeric' })}`}
           </p>
         </div>
-        <span
-          className="tabular inline-flex items-center gap-1 font-semibold"
-          aria-label={`${seller.rating} out of 5 stars`}
-        >
-          <Star className="h-4 w-4 fill-zest text-rind" aria-hidden /> {seller.rating.toFixed(1)}
-        </span>
       </div>
       <p className="tabular text-sm text-muted">{seller.tradesCount} trades completed</p>
     </section>

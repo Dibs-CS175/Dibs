@@ -1,31 +1,12 @@
-import { simulate } from '@/lib/dev';
-import type { Result } from '@/lib/result';
-import type { Listing, ListingDraft, ListingDraftInput } from '@/lib/types';
-import { listings } from '@/lib/fixtures/listings';
+// Pages import from this file. Each function runs its Demo version (fixtures, lib/demo/actions/listings.ts)
+// or its Live version (your code, lib/live/actions/listings.ts), depending on the data source picked in
+// the preview panel (/dev). Nothing else belongs here.
 
-export async function toggleSave(
-  listingId: string,
-  saved: boolean,
-): Promise<Result<{ listingId: string; saved: boolean }>> {
-  // STUB(listings): replace with real implementation
-  return simulate({ listingId, saved });
-}
+import { choose } from '@/lib/dev/choose';
+import * as demo from '@/lib/demo/actions/listings';
+import * as live from '@/lib/live/actions/listings';
 
-export async function saveListingDraft(
-  input: ListingDraftInput,
-  draftId?: string,
-): Promise<Result<ListingDraft>> {
-  // STUB(listings): replace with real implementation
-  return simulate<ListingDraft>({ ...input, id: draftId ?? 'draft_1', savedAt: '2026-10-08T19:00:00Z' });
-}
-
-export async function publishListing(draftId: string): Promise<Result<Listing>> {
-  // STUB(listings): replace with real implementation
-  void draftId;
-  return simulate<Listing>({ ...listings[29]!, id: 'l_new', status: 'active' });
-}
-
-export async function removeListing(listingId: string): Promise<Result<{ listingId: string }>> {
-  // STUB(listings): replace with real implementation
-  return simulate({ listingId });
-}
+export const toggleSave = choose(demo.toggleSave, live.toggleSave);
+export const saveListingDraft = choose(demo.saveListingDraft, live.saveListingDraft);
+export const publishListing = choose(demo.publishListing, live.publishListing);
+export const removeListing = choose(demo.removeListing, live.removeListing);

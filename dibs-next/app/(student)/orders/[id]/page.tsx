@@ -3,47 +3,31 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { CalendarX, ChevronLeft, Flag, MapPin, PackageX, Star, Warehouse } from 'lucide-react';
+import { ChevronLeft, CreditCard, MapPin, PackageX } from 'lucide-react';
 import { ConfirmSheet } from '@/components/confirm-sheet';
 import { ListingPhoto } from '@/components/listing/listing-photo';
 import { QuoteLines } from '@/components/listing/quote-lines';
-import { ReportSheet } from '@/components/listing/sheets';
 import { HandoffCodeDisplay, HandoffCodeEntry } from '@/components/orders/handoff';
 import { OrderStatusBadge } from '@/components/orders/order-status';
-import { RatingSheet } from '@/components/orders/rating-sheet';
 import { Timeline } from '@/components/orders/timeline';
 import { EmptyState, ErrorState, PageSkeleton } from '@/components/states';
 import { Button } from '@/components/ui/button';
-import { cancelOrder, enterHandoffCode } from '@/lib/actions/orders';
-import { chooseStoragePickupSlot } from '@/lib/actions/consignment';
-import { getStoragePickupSlots } from '@/lib/queries/consignment';
-import { SlotPicker } from '@/components/summer-hold/slot-picker';
 import { FormError } from '@/components/ui/field';
-import { Skeleton } from '@/components/ui/skeleton';
-import { submitRating } from '@/lib/actions/ratings';
-import { reportProblem } from '@/lib/actions/reports';
-import { formatDateTime, formatWindow, shortName } from '@/lib/format';
+import { cancelOrder, enterHandoffCode, payOrder } from '@/lib/actions/orders';
+import { useTimeZone } from '@/lib/campus';
+import { errorMessage } from '@/lib/errorMessages';
+import { formatDateTime, shortName } from '@/lib/format';
 import { useAction, useQuery } from '@/lib/hooks';
 import { getOrder } from '@/lib/queries/orders';
-import { messageFor, ok } from '@/lib/result';
-import type { SlotView } from '@/lib/types';
 
 export default function OrderPage({ params }: { params: { id: string } }) {
+  const tz = useTimeZone();
   const { state, retry, setData } = useQuery(() => getOrder(params.id), [params.id]);
   const handoff = useAction(enterHandoffCode);
   const cancel = useAction(cancelOrder);
-  const report = useAction(reportProblem);
-  const rate = useAction(submitRating);
+  const pay = useAction(payOrder);
   const [cancelOpen, setCancelOpen] = useState(false);
-  const [reportOpen, setReportOpen] = useState(false);
-  const [rateOpen, setRateOpen] = useState(false);
-  const needSlots = state.status === 'data' && state.data.canChooseStorageSlot;
-  const storageSlots = useQuery(
-    () => (needSlots ? getStoragePickupSlots() : Promise.resolve(ok<SlotView[]>([]))),
-    [needSlots],
-  );
-  const chooseSlot = useAction(chooseStoragePickupSlot);
-  const [slotId, setSlotId] = useState<string | null>(null);
+  const [locked, setLocked] = useState(false);
 
   if (state.status === 'loading') return <PageSkeleton />;
   if (state.status === 'error') {
@@ -52,12 +36,12 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         {state.error.code === 'NOT_FOUND' ? (
           <EmptyState
             icon={PackageX}
-            text="We couldn't find that order."
+            text="We couldn’t find that order."
             actionLabel="See all orders"
             href="/orders"
           />
         ) : (
-          <ErrorState message={state.error.message} onRetry={retry} />
+          <ErrorState message={errorMessage(state.error)} onRetry={retry} />
         )}
       </div>
     );
@@ -66,6 +50,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const d = state.data;
   const o = d.order;
   const name = shortName(d.counterpart);
+  const isBuyer = d.viewerRole === 'buyer';
 
   return (
     <div className="container flex max-w-[760px] flex-col gap-6 py-6 md:py-10">
@@ -84,112 +69,77 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         <div className="flex min-w-0 flex-col gap-1">
           <h1 className="text-2xl font-extrabold md:text-3xl">{d.listing.title}</h1>
           <p className="text-sm text-muted">
-            {d.viewerRole === 'buyer' ? 'Seller' : 'Buyer'}: {name}
+            {isBuyer ? 'Seller' : 'Buyer'}: {name}
           </p>
           <OrderStatusBadge status={o.status} />
         </div>
       </div>
 
-      {o.status === 'held' && d.viewerRole === 'buyer' && o.handoffCodeVisibleToBuyer ? (
-        <HandoffCodeDisplay
-          code={o.handoffCodeVisibleToBuyer}
-          note={
-            d.pickupAtStorage ? 'Show this to Dibs staff when you collect. It completes the sale.' : undefined
-          }
-        />
+      {o.status === 'pending_payment' && isBuyer ? (
+        <div className="flex flex-col gap-2 rounded-card border border-line bg-surface p-4">
+          <p className="font-semibold">Finish paying to hold this item.</p>
+          <FormError
+            message={pay.error ? errorMessage(pay.error, { CONFLICT: 'Someone called dibs first.' }) : null}
+          />
+          <Button
+            variant="dibs"
+            className="w-fit"
+            disabled={pay.pending}
+            onClick={async () => {
+              const r = await pay.run(o.id);
+              if (r?.ok) {
+                toast.success('Paid. Dibs Protect is holding your payment.');
+                retry();
+              }
+            }}
+          >
+            <CreditCard className="h-4 w-4" aria-hidden /> {pay.pending ? 'Paying…' : 'Pay with Dibs Protect'}
+          </Button>
+        </div>
       ) : null}
-      {o.status === 'held' && d.viewerRole === 'seller' ? (
+
+      {o.status === 'held' && isBuyer && o.handoffCodeVisibleToBuyer ? (
+        <HandoffCodeDisplay code={o.handoffCodeVisibleToBuyer} />
+      ) : null}
+      {o.status === 'held' && !isBuyer ? (
         <HandoffCodeEntry
           pending={handoff.pending}
+          locked={locked}
+          attemptsRemaining={o.attemptsRemaining}
           error={
             handoff.error
-              ? messageFor(handoff.error, { CONFLICT: 'This order changed. Refresh to see the latest.' })
+              ? errorMessage(handoff.error, {
+                  ATTEMPTS_EXCEEDED:
+                    'Too many wrong codes. The handoff is locked; Dibs will contact you both.',
+                  CONFLICT: 'This order changed. Refresh to see the latest.',
+                })
               : null
           }
           onSubmit={async (code) => {
             const r = await handoff.run(o.id, code);
-            if (r?.ok) {
+            if (!r) return;
+            if (r.ok) {
               toast.success('Handoff confirmed. Payment released.');
+              retry();
+            } else if (r.error.code === 'ATTEMPTS_EXCEEDED') {
+              setLocked(true);
+            } else if (r.error.code === 'CODE_INVALID') {
+              // The backend lowers attemptsRemaining; reload the order to show the new count.
               retry();
             }
           }}
         />
       ) : null}
 
-      {o.meetupSpot && !d.pickupAtStorage ? (
+      {d.meetupSpot ? (
         <p className="flex items-start gap-2 rounded-card bg-sunk p-4">
           <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           <span>
-            <strong>{o.meetupSpot}</strong>
-            {o.meetupTime ? ` · ${formatDateTime(o.meetupTime)}` : null}
+            <strong>{d.meetupSpot.name}</strong>
+            {o.meetupTime ? ` · ${formatDateTime(o.meetupTime, tz)}` : null}
+            <span className="block text-sm text-muted">{d.meetupSpot.description}</span>
           </span>
         </p>
-      ) : null}
-
-      {d.pickupAtStorage && o.status === 'held' ? (
-        <section
-          aria-labelledby="sp-h"
-          className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4"
-        >
-          <h2 id="sp-h" className="flex items-center gap-2 text-xl font-bold">
-            <Warehouse className="h-5 w-5" aria-hidden /> Pickup at the storage unit
-          </h2>
-          <p className="text-sm">{o.meetupSpot}</p>
-          {d.storagePickupSlot ? (
-            <p className="font-semibold">
-              {formatWindow(d.storagePickupSlot.startsAt, d.storagePickupSlot.endsAt)}
-            </p>
-          ) : d.canChooseStorageSlot ? (
-            storageSlots.state.status === 'loading' ? (
-              <Skeleton className="h-32 rounded-input" />
-            ) : storageSlots.state.status === 'error' ? (
-              <ErrorState message={storageSlots.state.error.message} onRetry={storageSlots.retry} />
-            ) : storageSlots.state.data.length === 0 ? (
-              <EmptyState
-                icon={CalendarX}
-                text="No pickup windows are open right now."
-                actionLabel="Check again"
-                onAction={storageSlots.retry}
-              />
-            ) : (
-              <>
-                <SlotPicker
-                  slots={storageSlots.state.data}
-                  value={slotId}
-                  onChange={setSlotId}
-                  name="storage-pickup"
-                />
-                <FormError
-                  message={
-                    chooseSlot.error
-                      ? messageFor(chooseSlot.error, {
-                          SLOT_FULL: 'That window just filled up. Pick another one.',
-                        })
-                      : null
-                  }
-                />
-                <Button
-                  className="w-fit"
-                  disabled={!slotId || chooseSlot.pending}
-                  onClick={async () => {
-                    if (!slotId) return;
-                    const r = await chooseSlot.run(o.id, slotId);
-                    if (r?.ok) {
-                      setData({ ...d, storagePickupSlot: r.data.slot, canChooseStorageSlot: false });
-                      toast.success('Pickup window saved');
-                    } else if (r?.error.code === 'SLOT_FULL') {
-                      setSlotId(null);
-                      storageSlots.retry();
-                    }
-                  }}
-                >
-                  {chooseSlot.pending ? 'Saving…' : 'Save pickup window'}
-                </Button>
-              </>
-            )
-          ) : null}
-          <p className="text-sm text-muted">If the item is damaged while you move it out, the sale stands.</p>
-        </section>
       ) : null}
 
       <section aria-labelledby="tl-h" className="flex flex-col gap-3">
@@ -201,28 +151,22 @@ export default function OrderPage({ params }: { params: { id: string } }) {
 
       <section aria-labelledby="pay-h" className="flex flex-col gap-3">
         <h2 id="pay-h" className="text-xl font-bold">
-          Payment
+          {isBuyer ? 'What you pay' : 'What you receive'}
         </h2>
-        <QuoteLines quote={o.quote} />
+        {isBuyer ? (
+          <QuoteLines quote={o.quote} />
+        ) : (
+          <QuoteLines quote={o.payoutQuote} totalLabel="You receive" />
+        )}
       </section>
 
       <div className="flex flex-wrap gap-3">
-        {d.needsRating ? (
-          <Button onClick={() => setRateOpen(true)}>
-            <Star className="h-4 w-4" aria-hidden /> Rate {name}
-          </Button>
-        ) : null}
         <Button asChild variant="secondary">
           <Link href={`/listings/${d.listing.id}`}>View listing</Link>
         </Button>
         {d.canCancel ? (
           <Button variant="destructive" onClick={() => setCancelOpen(true)}>
             Cancel order
-          </Button>
-        ) : null}
-        {d.canReport ? (
-          <Button variant="link" className="text-muted" onClick={() => setReportOpen(true)}>
-            <Flag className="h-4 w-4" aria-hidden /> Report a problem
           </Button>
         ) : null}
       </div>
@@ -234,13 +178,13 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           if (!v) cancel.clearError();
         }}
         title="Cancel this order?"
-        body="Dibs Protect returns the held payment to the buyer and the listing goes back on Browse."
+        body="Dibs Protect returns any held payment to the buyer and the listing goes back on Browse."
         confirmLabel="Cancel order"
         pendingLabel="Cancelling…"
         pending={cancel.pending}
         error={
           cancel.error
-            ? messageFor(cancel.error, {
+            ? errorMessage(cancel.error, {
                 CONFLICT: 'This order already moved forward and can no longer be cancelled.',
               })
             : null
@@ -251,37 +195,6 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             setCancelOpen(false);
             toast.success('Order cancelled');
             setData({ ...d, order: r.data, canCancel: false });
-          }
-        }}
-      />
-      <ReportSheet
-        open={reportOpen}
-        onOpenChange={setReportOpen}
-        title="Report a problem"
-        note="Reporting pauses the payment while our team reviews it."
-        pending={report.pending}
-        error={report.error ? report.error.message : null}
-        onSubmit={async (reason, details) => {
-          const r = await report.run(o.id, reason, details);
-          if (r?.ok) {
-            setReportOpen(false);
-            toast.success('Report sent. Payment is paused while we review.');
-            retry();
-          }
-        }}
-      />
-      <RatingSheet
-        open={rateOpen}
-        onOpenChange={setRateOpen}
-        name={name}
-        pending={rate.pending}
-        error={rate.error ? messageFor(rate.error, { CONFLICT: 'You already rated this order.' }) : null}
-        onSubmit={async (stars, tags) => {
-          const r = await rate.run(o.id, d.counterpart.id, stars, tags);
-          if (r?.ok) {
-            setRateOpen(false);
-            toast.success('Thanks for rating');
-            setData({ ...d, needsRating: false });
           }
         }}
       />

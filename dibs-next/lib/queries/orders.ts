@@ -1,37 +1,10 @@
-import { simulate } from '@/lib/dev';
-import { listings } from '@/lib/fixtures/listings';
-import { orderExtras, orders, storageExtras } from '@/lib/fixtures/orders';
-import { me, users } from '@/lib/fixtures/users';
-import type { Result } from '@/lib/result';
-import type { Order, OrderDetail, OrderSummary } from '@/lib/types';
+// Pages import from this file. Each function runs its Demo version (fixtures, lib/demo/queries/orders.ts)
+// or its Live version (your code, lib/live/queries/orders.ts), depending on the data source picked in
+// the preview panel (/dev). Nothing else belongs here.
 
-const summary = (o: Order): OrderSummary => {
-  const l = listings.find((x) => x.id === o.listingId)!;
-  const viewerRole = o.buyerId === me.id ? 'buyer' : 'seller';
-  const other = users.find((u) => u.id === (viewerRole === 'buyer' ? o.sellerId : o.buyerId))!;
-  return {
-    order: viewerRole === 'buyer' ? o : { ...o, handoffCodeVisibleToBuyer: undefined },
-    listing: { id: l.id, title: l.title, photos: l.photos },
-    viewerRole,
-    counterpart: { id: other.id, firstName: other.firstName, lastInitial: other.lastInitial },
-  };
-};
+import { choose } from '@/lib/dev/choose';
+import * as demo from '@/lib/demo/queries/orders';
+import * as live from '@/lib/live/queries/orders';
 
-export async function getMyOrders(): Promise<Result<OrderSummary[]>> {
-  // STUB(orders): replace with real implementation
-  return simulate(orders.map(summary), []);
-}
-
-export async function getOrder(orderId: string): Promise<Result<OrderDetail>> {
-  // STUB(orders): replace with real implementation
-  const o = orders.find((x) => x.id === orderId) ?? orders[0]!;
-  return simulate<OrderDetail>({
-    ...summary(o),
-    ...orderExtras[o.id]!,
-    ...(storageExtras[o.id] ?? {
-      pickupAtStorage: false,
-      storagePickupSlot: null,
-      canChooseStorageSlot: false,
-    }),
-  });
-}
+export const getMyOrders = choose(demo.getMyOrders, live.getMyOrders);
+export const getOrder = choose(demo.getOrder, live.getOrder);

@@ -1,109 +1,14 @@
-import { simulate } from '@/lib/dev';
-import { bookings, myBookingFixture, pickupSlots, returnSlots } from '@/lib/fixtures/summerHold';
-import type { Result } from '@/lib/result';
-import type { HousingType, MyBooking, StorageItemInput, SummerHoldBooking } from '@/lib/types';
+// Pages import from this file. Each function runs its Demo version (fixtures, lib/demo/actions/summerHold.ts)
+// or its Live version (your code, lib/live/actions/summerHold.ts), depending on the data source picked in
+// the preview panel (/dev). Nothing else belongs here.
 
-export interface BookingDraftInput {
-  housingType: HousingType;
-  address: string;
-  items: StorageItemInput[];
-  /** Required when any item is marked to sell. */
-  consignmentTermsAccepted: boolean;
-}
+import { choose } from '@/lib/dev/choose';
+import * as demo from '@/lib/demo/actions/summerHold';
+import * as live from '@/lib/live/actions/summerHold';
 
-/** Errors: VALIDATION (for example a sell item priced under the consignment minimum). */
-export async function createBooking(input: BookingDraftInput): Promise<Result<SummerHoldBooking>> {
-  // STUB(summerHold): replace with real implementation
-  return simulate<SummerHoldBooking>({
-    ...bookings[2]!,
-    id: 'bk_new',
-    userId: 'u_me',
-    status: 'draft',
-    housingType: input.housingType,
-    address: input.address,
-    items: input.items.map((i, n) => ({
-      id: `new_i${n}`,
-      bookingId: 'bk_new',
-      label: i.label,
-      size: i.size,
-      status: 'pending',
-      disposition: i.disposition,
-      askingPriceCents: i.askingPriceCents ?? undefined,
-      consignmentStatus: i.disposition === 'sell' ? 'awaiting_checkin' : undefined,
-    })),
-  });
-}
-
-/** Errors: SLOT_FULL. */
-export async function choosePickupSlot(
-  bookingId: string,
-  slotId: string,
-): Promise<Result<SummerHoldBooking>> {
-  // STUB(summerHold): replace with real implementation
-  return simulate<SummerHoldBooking>({ ...bookings[2]!, id: bookingId, pickupSlotId: slotId });
-}
-
-/** Takes the deposit and holds it with Dibs Protect. Errors: PAYMENT_FAILED. */
-export async function payDeposit(bookingId: string): Promise<Result<SummerHoldBooking>> {
-  // STUB(summerHold): replace with real implementation
-  return simulate<SummerHoldBooking>({ ...bookings[0]!, id: bookingId, status: 'deposit_paid' });
-}
-
-/** Errors: DEADLINE_PASSED, VALIDATION (sell item under the consignment minimum). */
-export async function updateBookingItems(
-  bookingId: string,
-  items: StorageItemInput[],
-  consignmentTermsAccepted: boolean,
-): Promise<Result<MyBooking>> {
-  void consignmentTermsAccepted;
-  // STUB(summerHold): replace with real implementation
-  return simulate<MyBooking>({
-    ...myBookingFixture,
-    booking: {
-      ...myBookingFixture.booking,
-      id: bookingId,
-      items: items.map((i, n) => ({
-        id: `si_e${n}`,
-        bookingId,
-        label: i.label,
-        size: i.size,
-        status: 'pending',
-        disposition: i.disposition,
-        askingPriceCents: i.askingPriceCents ?? undefined,
-        consignmentStatus: i.disposition === 'sell' ? 'awaiting_checkin' : undefined,
-      })),
-    },
-  });
-}
-
-/** Errors: SLOT_FULL. */
-export async function chooseReturnSlot(bookingId: string, slotId: string): Promise<Result<MyBooking>> {
-  // STUB(summerHold): replace with real implementation
-  return simulate<MyBooking>({
-    ...myBookingFixture,
-    booking: { ...myBookingFixture.booking, id: bookingId, returnSlotId: slotId },
-    returnSlot: returnSlots.find((s) => s.id === slotId) ?? null,
-  });
-}
-
-/** Errors: PAYMENT_FAILED, DEADLINE_PASSED. */
-export async function payBalance(bookingId: string): Promise<Result<MyBooking>> {
-  // STUB(summerHold): replace with real implementation
-  return simulate<MyBooking>({
-    ...myBookingFixture,
-    booking: { ...myBookingFixture.booking, id: bookingId, status: 'paid' },
-    canPayBalance: false,
-  });
-}
-
-export async function cancelBooking(bookingId: string): Promise<Result<MyBooking>> {
-  // STUB(summerHold): replace with real implementation
-  return simulate<MyBooking>({
-    ...myBookingFixture,
-    booking: { ...myBookingFixture.booking, id: bookingId, status: 'cancelled' },
-    pickupSlot: pickupSlots[2] ?? null,
-    canEditItems: false,
-    canPayBalance: false,
-    canCancel: false,
-  });
-}
+export const createBooking = choose(demo.createBooking, live.createBooking);
+export const payRegistration = choose(demo.payRegistration, live.payRegistration);
+export const createParentPayLink = choose(demo.createParentPayLink, live.createParentPayLink);
+export const cancelBooking = choose(demo.cancelBooking, live.cancelBooking);
+export const payBalance = choose(demo.payBalance, live.payBalance);
+export const payAsParent = choose(demo.payAsParent, live.payAsParent);

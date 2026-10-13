@@ -1,10 +1,14 @@
+'use client';
+
 import { Check, Circle, Dot } from 'lucide-react';
 import { formatDateTime } from '@/lib/format';
 import type { TimelineStep } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { useTimeZone } from '@/lib/campus';
 
 /** Renders the timeline exactly as the backend returns it. */
 export function Timeline({ steps }: { steps: TimelineStep[] }) {
+  const tz = useTimeZone();
   return (
     <ol className="flex flex-col">
       {steps.map((s, i) => (
@@ -36,7 +40,7 @@ export function Timeline({ steps }: { steps: TimelineStep[] }) {
             <span className={cn('font-semibold', s.state === 'upcoming' && 'text-muted')}>{s.label}</span>
             <span className="text-sm text-muted">
               {s.at
-                ? formatDateTime(s.at)
+                ? formatDateTime(s.at, tz)
                 : s.state === 'current'
                   ? 'Now'
                   : s.state === 'done'

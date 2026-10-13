@@ -2,18 +2,21 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Archive, BadgeCheck, MapPin, ShieldCheck, Star } from 'lucide-react';
+import { Archive, BadgeCheck, MapPin, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ListingPhoto } from '@/components/listing/listing-photo';
-import type { ISODate } from '@/lib/types';
+import { formatMoney, timeLeft } from '@/lib/format';
+import type { ISODate, RegistrationTier, SummerHoldTeaser as SummerHoldTeaserData } from '@/lib/types';
 
-export function Hero() {
+export function Hero({ campusName }: { campusName: string | null }) {
   return (
     <section className="container grid max-w-content items-center gap-10 py-12 md:grid-cols-2 md:py-20">
       <div className="flex flex-col gap-6">
-        <p className="w-fit rounded-full bg-zest px-3 py-1 text-xs font-semibold text-on-accent">
-          Riverside student marketplace
-        </p>
+        {campusName ? (
+          <p className="w-fit rounded-full bg-zest px-3 py-1 text-xs font-semibold text-on-accent">
+            {campusName} student marketplace
+          </p>
+        ) : null}
         <h1 className="text-6xl font-extrabold tracking-tight md:text-8xl">Called it.</h1>
         <p className="max-w-[44ch] text-xl text-muted">
           Buy and sell with verified students. Hand off safely with Dibs Protect. Store your stuff over summer
@@ -49,7 +52,6 @@ const TRUST = [
     text: 'Your payment is held until you share the handoff code.',
   },
   { icon: MapPin, title: 'Public meetup spots', text: 'Suggested spots that are busy and well lit.' },
-  { icon: Star, title: 'Ratings', text: 'Both sides rate every trade.' },
 ];
 
 export function TrustBand() {
@@ -59,7 +61,7 @@ export function TrustBand() {
         <h2 id="trust-h" className="sr-only">
           Why trade on Dibs
         </h2>
-        <ul className="grid grid-cols-2 gap-8 md:grid-cols-4">
+        <ul className="grid gap-8 md:grid-cols-3">
           {TRUST.map((t) => (
             <li key={t.title} className="flex flex-col gap-2">
               <span className="grid h-12 w-12 place-items-center rounded-card bg-white/10">
@@ -107,24 +109,24 @@ export function HowItWorks() {
   );
 }
 
-/** Countdown display. The target date comes from lib/config/app.ts. */
-export function Countdown({ to }: { to: ISODate }) {
-  const [now, setNow] = useState<number | null>(null);
+/** Countdown to a timestamp returned by a query. Formatting time left is display only. */
+export function Countdown({ to, label }: { to: ISODate; label: string }) {
+  const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
-    setNow(Date.now());
-    const t = setInterval(() => setNow(Date.now()), 30_000);
+    setNow(new Date());
+    const t = setInterval(() => setNow(new Date()), 30_000);
     return () => clearInterval(t);
   }, []);
-  const diff = now === null ? 0 : Math.max(0, Date.parse(to) - now);
+  const left = timeLeft(to, now ?? new Date(to));
   const parts: [string, number][] = [
-    ['days', Math.floor(diff / 86_400_000)],
-    ['hours', Math.floor((diff % 86_400_000) / 3_600_000)],
-    ['minutes', Math.floor((diff % 3_600_000) / 60_000)],
+    ['days', left.days],
+    ['hours', left.hours],
+    ['minutes', left.minutes],
   ];
   return (
     <div
       role="timer"
-      aria-label={`${parts[0]![1]} days, ${parts[1]![1]} hours, ${parts[2]![1]} minutes until move-out`}
+      aria-label={`${left.days} days, ${left.hours} hours, ${left.minutes} minutes ${label}`}
       className="grid max-w-sm grid-cols-3 gap-2"
     >
       {parts.map(([k, v]) => (
@@ -139,29 +141,41 @@ export function Countdown({ to }: { to: ISODate }) {
   );
 }
 
-export function SummerHoldTeaser({ moveOut }: { moveOut: ISODate }) {
+/** Summer Hold teaser. Every number comes from getSummerHoldTeaser and getSummerHoldOffers. */
+export function SummerHoldTeaser({ teaser, tier }: { teaser: SummerHoldTeaserData; tier: RegistrationTier }) {
   return (
-    <section className="container max-w-content py-16" aria-labelledby="hold-h">
-      <div className="grid items-center gap-8 rounded-sheet border border-line bg-surface p-6 md:grid-cols-2 md:p-10">
-        <div className="flex flex-col gap-4">
-          <p className="inline-flex items-center gap-2 text-sm font-semibold text-rind">
-            <Archive className="h-4 w-4" aria-hidden /> Summer Hold
-          </p>
-          <h2 id="hold-h" className="text-3xl font-extrabold md:text-5xl">
-            Don&apos;t haul it home. Hold it.
-          </h2>
-          <p className="text-muted">
-            We pick up your things at move-out, store them over summer, and bring them back in the fall.
-          </p>
-          <Button asChild className="w-fit">
-            <Link href="/summer-hold">See how Summer Hold works</Link>
-          </Button>
-        </div>
-        <div className="flex flex-col gap-3">
-          <p className="text-sm font-semibold text-muted">Move-out starts in</p>
-          <Countdown to={moveOut} />
-        </div>
+    <div className="grid items-center gap-8 rounded-sheet border border-line bg-surface p-6 md:grid-cols-2 md:p-10">
+      <div className="flex flex-col gap-4">
+        <p className="inline-flex items-center gap-2 text-sm font-semibold text-rind">
+          <Archive className="h-4 w-4" aria-hidden /> Summer Hold
+        </p>
+        <h2 id="hold-h" className="text-3xl font-extrabold md:text-5xl">
+          Don&apos;t haul it home. Hold it.
+        </h2>
+        <p className="text-muted">
+          We pick up your things at move-out, store them over summer, and bring them back in the fall.
+        </p>
+        <p className="tabular text-2xl font-bold">
+          {teaser.itemCount} items from {formatMoney(teaser.totalCents)}
+          <span className="block text-sm font-normal text-muted">
+            All-in price, every required fee included.
+          </span>
+        </p>
+        <Button asChild className="w-fit">
+          <Link href="/summer-hold">See how Summer Hold works</Link>
+        </Button>
       </div>
-    </section>
+      <div className="flex flex-col gap-3">
+        <p className="text-sm font-semibold text-muted">
+          {tier.label} at {formatMoney(tier.cents)}
+          {tier.endsAt ? ' ends in' : ''}
+        </p>
+        {tier.endsAt ? (
+          <Countdown to={tier.endsAt} label={`until ${tier.label} ends`} />
+        ) : (
+          <p className="rounded-card bg-sunk p-4 text-sm">Registration dates are coming soon.</p>
+        )}
+      </div>
+    </div>
   );
 }

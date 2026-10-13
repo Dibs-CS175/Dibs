@@ -5,9 +5,9 @@ const MAP: Record<
   OrderStatus,
   { label: string; variant: 'warning' | 'success' | 'error' | 'default' | 'outline' }
 > = {
+  pending_payment: { label: 'Waiting for payment', variant: 'outline' },
   held: { label: 'Held by Dibs Protect', variant: 'warning' },
   released: { label: 'Complete', variant: 'success' },
-  disputed: { label: 'Under review', variant: 'error' },
   cancelled: { label: 'Cancelled', variant: 'outline' },
   refunded: { label: 'Refunded', variant: 'default' },
 };

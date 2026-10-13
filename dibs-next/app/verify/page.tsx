@@ -11,11 +11,11 @@ import { HousingPicker } from '@/components/verify/housing-picker';
 import { requestVerificationCode, setHousingType, verifyCode } from '@/lib/actions/users';
 import { RESEND_SECONDS } from '@/lib/config/app';
 import { useAction } from '@/lib/hooks';
-import { messageFor } from '@/lib/result';
-import type { HousingType } from '@/lib/types';
+import { errorMessage } from '@/lib/errorMessages';
+import type { Campus, HousingType } from '@/lib/types';
 
-/** Format check only. Whether the address belongs to a campus is decided by the backend. */
-const looksLikeEdu = (v: string) => /^[^\s@]+@[^\s@]+\.edu$/i.test(v.trim());
+/** Format check only. Whether the address is a campus (.edu) address, and which campus, is the backend's call. */
+const looksLikeEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
 function VerifyFlow() {
   const router = useRouter();
@@ -27,6 +27,7 @@ function VerifyFlow() {
   const [digits, setDigits] = useState<string[]>(Array(6).fill(''));
   const [resendIn, setResendIn] = useState(RESEND_SECONDS);
   const [housing, setHousing] = useState<HousingType | null>(null);
+  const [campus, setCampus] = useState<Campus | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
 
   const send = useAction(requestVerificationCode);
@@ -41,15 +42,17 @@ function VerifyFlow() {
   }, [step, resendIn]);
 
   const formatError =
-    touched && email.length > 0 && !looksLikeEdu(email) ? 'Use your campus email ending in .edu.' : null;
+    touched && email.length > 0 && !looksLikeEmail(email) ? 'Enter an email address like you@ucr.edu.' : null;
   const sendError = send.error
-    ? messageFor(send.error, {
-        VALIDATION: "That email isn't a campus address we recognize. Use your campus email.",
+    ? errorMessage(send.error, {
+        VALIDATION: 'Enter an email address like you@ucr.edu.',
+        NOT_EDU: 'That isn’t a campus email. Use the address your school gave you; it ends in .edu.',
         RATE_LIMITED: 'Too many codes sent. Wait a few minutes, then try again.',
       })
     : null;
   const codeError = check.error
-    ? messageFor(check.error, {
+    ? errorMessage(check.error, {
+        CODE_INVALID: 'That code doesn’t match. Check the email and try again.',
         RATE_LIMITED: 'Too many tries. Wait a few minutes, then request a new code.',
       })
     : null;
@@ -57,7 +60,7 @@ function VerifyFlow() {
   const submitEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched(true);
-    if (!looksLikeEdu(email)) return;
+    if (!looksLikeEmail(email)) return;
     const r = await send.run(email.trim());
     if (r?.ok) {
       setStep('code');
@@ -67,8 +70,10 @@ function VerifyFlow() {
 
   const submitCode = async (code: string) => {
     const r = await check.run(email.trim(), code);
-    if (r?.ok) setStep('housing');
-    else setDigits(Array(6).fill(''));
+    if (r?.ok) {
+      setCampus(r.data.campus);
+      setStep('housing');
+    } else setDigits(Array(6).fill(''));
   };
 
   return (
@@ -98,11 +103,11 @@ function VerifyFlow() {
                 aria-describedby="email-msg"
                 className="pl-9 pr-10"
               />
-              {looksLikeEdu(email) ? (
+              {looksLikeEmail(email) ? (
                 <span
                   className="absolute right-3 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full bg-success text-white"
                   role="img"
-                  aria-label="Looks like a campus email"
+                  aria-label="Email format looks right"
                 >
                   <Check className="h-4 w-4" strokeWidth={3} aria-hidden />
                 </span>
@@ -113,7 +118,7 @@ function VerifyFlow() {
               className={formatError || sendError ? 'text-sm text-error' : 'text-sm text-muted'}
               role={sendError ? 'alert' : undefined}
             >
-              {formatError ?? sendError ?? 'Personal emails are not accepted.'}
+              {formatError ?? sendError ?? 'Personal emails are not accepted. Use your .edu address.'}
             </p>
           </div>
           <Button type="submit" size="lg" disabled={send.pending || !email}>
@@ -188,6 +193,9 @@ function VerifyFlow() {
       {step === 'housing' && (
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
+            <p className="flex items-center gap-2 font-semibold text-success" role="status">
+              <Check className="h-5 w-5" aria-hidden /> You’re verified{campus ? ` at ${campus.name}` : ''}.
+            </p>
             <h1 ref={heading} tabIndex={-1} className="text-4xl font-extrabold md:text-5xl">
               Where do you live?
             </h1>
@@ -199,7 +207,7 @@ function VerifyFlow() {
           <HousingPicker value={housing} onChange={setHousing} />
           {saveHousing.error ? (
             <p role="alert" className="text-sm text-error">
-              {saveHousing.error.message}
+              {errorMessage(saveHousing.error)}
             </p>
           ) : null}
           <div className="flex flex-col gap-3 md:flex-row">

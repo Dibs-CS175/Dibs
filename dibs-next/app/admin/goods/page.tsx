@@ -12,13 +12,12 @@ import { FormError } from '@/components/ui/field';
 import { disposeGoods, listGoods, markGoodsSold } from '@/lib/actions/goods';
 import { useQuery } from '@/lib/hooks';
 import { getGoods } from '@/lib/queries/goods';
-import { messageFor } from '@/lib/result';
+import { errorMessage } from '@/lib/errorMessages';
 import type { GoodsItem, GoodsStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 const ERRORS = {
-  DEADLINE_PASSED: 'This item is still in its hold period.',
-  CONFLICT: 'This item changed. Reload to see the latest.',
+  CONFLICT: 'This item is still in its hold period, or it changed. Reload to see the latest.',
 };
 const ACTIONS = {
   list: { fn: listGoods, done: 'Listed on Browse' },
@@ -38,7 +37,7 @@ export default function GoodsPage() {
     setError(null);
     const r = await ACTIONS[a].fn(item);
     setBusy(null);
-    if (!r.ok) return setError(`${item.title}: ${messageFor(r.error, ERRORS)}`);
+    if (!r.ok) return setError(`${item.title}: ${errorMessage(r.error, ERRORS)}`);
     if (state.status === 'data') setData(state.data.map((g) => (g.id === item.id ? r.data : g)));
     toast.success(ACTIONS[a].done);
   };
@@ -83,7 +82,7 @@ export default function GoodsPage() {
       {state.status === 'loading' ? (
         <ListSkeleton rows={6} />
       ) : state.status === 'error' ? (
-        <ErrorState message={state.error.message} onRetry={retry} />
+        <ErrorState message={errorMessage(state.error)} onRetry={retry} />
       ) : state.data.length === 0 ? (
         <EmptyState
           icon={PackageOpen}

@@ -1,20 +1,19 @@
-// Counts remaining `// STUB(<area>)` markers under lib/ and prints them per area.
+// Counts remaining `// STUB(<area>)` markers under lib/ (they live in lib/live) and prints them per area.
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 const ROOT = new URL('..', import.meta.url).pathname;
 const AREAS = [
   'users',
+  'campus',
   'listings',
   'orders',
   'messages',
-  'ratings',
-  'reports',
   'pricing',
   'summerHold',
-  'logistics',
   'goods',
-  'impact',
+  'referrals',
+  'offers',
 ];
 const counts = Object.fromEntries(AREAS.map((a) => [a, 0]));
 const where = Object.fromEntries(AREAS.map((a) => [a, []]));

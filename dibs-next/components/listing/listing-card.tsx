@@ -7,6 +7,7 @@ import { ConditionBadge, HousingFitBadge, SourceBadge } from './badges';
 import { formatMoney, shortName, timeAgo } from '@/lib/format';
 import type { ListingCardView } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { useTimeZone } from '@/lib/campus';
 
 export function ListingCard({
   view,
@@ -17,6 +18,7 @@ export function ListingCard({
   onToggleSave?: (listingId: string, next: boolean) => void;
   savePending?: boolean;
 }) {
+  const tz = useTimeZone();
   const { listing: l, seller, saved } = view;
   return (
     <article className="relative flex min-w-0 flex-col gap-2">
@@ -30,7 +32,7 @@ export function ListingCard({
           <span className="tabular font-display text-xl font-extrabold">
             {l.priceCents === 0 ? 'Free' : formatMoney(l.priceCents)}
           </span>
-          <span className="whitespace-nowrap text-xs text-muted">{timeAgo(l.createdAt)}</span>
+          <span className="whitespace-nowrap text-xs text-muted">{timeAgo(l.createdAt, tz)}</span>
         </div>
         <h3 className="line-clamp-2 px-0.5 font-sans text-sm font-semibold leading-snug">{l.title}</h3>
         <span className="flex min-w-0 items-center gap-1 px-0.5 text-xs text-muted">

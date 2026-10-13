@@ -26,15 +26,22 @@ export function HandoffCodeDisplay({ code, note }: { code: string; note?: string
   );
 }
 
-/** Seller view: enter the buyer's 4-digit code. The backend checks it; the message says how many attempts remain. */
+/**
+ * Seller view: enter the buyer's 4-digit code. The backend checks it and returns attemptsRemaining;
+ * `locked` comes back as ATTEMPTS_EXCEEDED.
+ */
 export function HandoffCodeEntry({
   onSubmit,
   pending,
   error,
+  attemptsRemaining,
+  locked = false,
 }: {
   onSubmit: (code: string) => void;
   pending: boolean;
   error: string | null;
+  attemptsRemaining?: number;
+  locked?: boolean;
 }) {
   const [code, setCode] = useState('');
   const complete = /^\d{4}$/.test(code);
@@ -43,7 +50,7 @@ export function HandoffCodeEntry({
       className="flex flex-col gap-2 rounded-card border border-line bg-surface p-4"
       onSubmit={(e) => {
         e.preventDefault();
-        if (complete) onSubmit(code);
+        if (complete && !locked) onSubmit(code);
       }}
     >
       <Label htmlFor="handoff">Enter the buyer’s handoff code</Label>
@@ -54,12 +61,13 @@ export function HandoffCodeEntry({
           autoComplete="one-time-code"
           maxLength={4}
           value={code}
+          disabled={locked}
           onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 4))}
           aria-invalid={Boolean(error)}
           aria-describedby="handoff-msg"
           className="tabular max-w-[160px] text-center text-2xl font-semibold tracking-[0.3em]"
         />
-        <Button type="submit" disabled={!complete || pending}>
+        <Button type="submit" disabled={!complete || pending || locked}>
           {pending ? 'Checking…' : 'Confirm handoff'}
         </Button>
       </div>
@@ -68,7 +76,13 @@ export function HandoffCodeEntry({
         role={error ? 'alert' : undefined}
         className={error ? 'text-sm text-error' : 'text-sm text-muted'}
       >
-        {error ?? 'Ask the buyer for their 4-digit code once they have the item.'}
+        {error
+          ? `${error}${attemptsRemaining !== undefined && !locked ? ` ${attemptsRemaining} ${attemptsRemaining === 1 ? 'attempt' : 'attempts'} left.` : ''}`
+          : `Ask the buyer for their 4-digit code once they have the item.${
+              attemptsRemaining !== undefined
+                ? ` ${attemptsRemaining} ${attemptsRemaining === 1 ? 'attempt' : 'attempts'} left.`
+                : ''
+            }`}
       </p>
     </form>
   );

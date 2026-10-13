@@ -1,53 +1,13 @@
-import { simulate } from '@/lib/dev';
-import { listings } from '@/lib/fixtures/listings';
-import { me, users } from '@/lib/fixtures/users';
-import type { Result } from '@/lib/result';
-import type { Listing, ListingCardView, ListingDetail, ListingSearch, Page } from '@/lib/types';
+// Pages import from this file. Each function runs its Demo version (fixtures, lib/demo/queries/listings.ts)
+// or its Live version (your code, lib/live/queries/listings.ts), depending on the data source picked in
+// the preview panel (/dev). Nothing else belongs here.
 
-const card = (l: Listing): ListingCardView => {
-  const u = users.find((x) => x.id === l.sellerId)!;
-  return {
-    listing: l,
-    seller: { id: u.id, firstName: u.firstName, lastInitial: u.lastInitial, verified: u.verified },
-    saved: l.id === 'l08' || l.id === 'l25',
-  };
-};
+import { choose } from '@/lib/dev/choose';
+import * as demo from '@/lib/demo/queries/listings';
+import * as live from '@/lib/live/queries/listings';
 
-/**
- * Search, filter and sort happen on the backend. The stub ignores `params` and returns fixture pages:
- * the first page without a cursor, the second page when a cursor is passed.
- */
-export async function searchListings(params: ListingSearch): Promise<Result<Page<ListingCardView>>> {
-  // STUB(listings): replace with real implementation
-  const active = listings.filter((l) => l.status === 'active');
-  const page = params.cursor
-    ? { items: active.slice(12).map(card), nextCursor: null }
-    : { items: active.slice(0, 12).map(card), nextCursor: 'page-2' };
-  return simulate<Page<ListingCardView>>(page, { items: [], nextCursor: null });
-}
-
-export async function getListing(listingId: string): Promise<Result<ListingDetail>> {
-  // STUB(listings): replace with real implementation
-  const l = listings.find((x) => x.id === listingId) ?? listings[1]!;
-  const seller = users.find((u) => u.id === l.sellerId)!;
-  return simulate<ListingDetail>({ listing: l, seller, saved: false, isOwn: l.sellerId === me.id });
-}
-
-export async function getMyListings(): Promise<Result<ListingCardView[]>> {
-  // STUB(listings): replace with real implementation
-  return simulate(listings.filter((l) => l.sellerId === me.id).map(card), []);
-}
-
-export async function getSavedListings(): Promise<Result<ListingCardView[]>> {
-  // STUB(listings): replace with real implementation
-  return simulate(
-    [listings[7]!, listings[24]!].map((l) => ({ ...card(l), saved: true })),
-    [],
-  );
-}
-
-export async function getSimilarListings(listingId: string): Promise<Result<ListingCardView[]>> {
-  // STUB(listings): replace with real implementation
-  void listingId;
-  return simulate(listings.slice(1, 7).map(card), []);
-}
+export const searchListings = choose(demo.searchListings, live.searchListings);
+export const getListing = choose(demo.getListing, live.getListing);
+export const getMyListings = choose(demo.getMyListings, live.getMyListings);
+export const getSavedListings = choose(demo.getSavedListings, live.getSavedListings);
+export const getSimilarListings = choose(demo.getSimilarListings, live.getSimilarListings);

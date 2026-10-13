@@ -1,36 +1,12 @@
-import { simulate } from '@/lib/dev';
-import { INTAKE_HOLD_UNTIL } from '@/lib/fixtures/goods';
-import type { Result } from '@/lib/result';
-import type { GoodsIntakeInput, GoodsItem } from '@/lib/types';
+// Pages import from this file. Each function runs its Demo version (fixtures, lib/demo/actions/goods.ts)
+// or its Live version (your code, lib/live/actions/goods.ts), depending on the data source picked in
+// the preview panel (/dev). Nothing else belongs here.
 
-/** Records a new Goods item. The backend decides `holdUntil`. */
-export async function intakeGoods(input: GoodsIntakeInput): Promise<Result<GoodsItem>> {
-  // STUB(goods): replace with real implementation
-  return simulate<GoodsItem>({
-    id: 'g_new',
-    title: input.title,
-    category: input.category || 'other',
-    photos: input.photos,
-    priceCents: input.priceCents ?? 0,
-    costCents: input.costCents ?? undefined,
-    serialNumber: input.serialNumber || undefined,
-    holdUntil: INTAKE_HOLD_UNTIL,
-    status: 'holding',
-    intakeDate: new Date().toISOString(),
-  });
-}
+import { choose } from '@/lib/dev/choose';
+import * as demo from '@/lib/demo/actions/goods';
+import * as live from '@/lib/live/actions/goods';
 
-export async function listGoods(item: GoodsItem): Promise<Result<GoodsItem>> {
-  // STUB(goods): replace with real implementation
-  return simulate<GoodsItem>({ ...item, status: 'listed' });
-}
-
-export async function markGoodsSold(item: GoodsItem): Promise<Result<GoodsItem>> {
-  // STUB(goods): replace with real implementation
-  return simulate<GoodsItem>({ ...item, status: 'sold' });
-}
-
-export async function disposeGoods(item: GoodsItem): Promise<Result<GoodsItem>> {
-  // STUB(goods): replace with real implementation
-  return simulate<GoodsItem>({ ...item, status: 'disposed' });
-}
+export const intakeGoods = choose(demo.intakeGoods, live.intakeGoods);
+export const listGoods = choose(demo.listGoods, live.listGoods);
+export const markGoodsSold = choose(demo.markGoodsSold, live.markGoodsSold);
+export const disposeGoods = choose(demo.disposeGoods, live.disposeGoods);

@@ -1,5 +1,7 @@
-import { DISPLAY_TIME_ZONE } from '@/lib/config/app';
 import type { Cents, ISODate } from '@/lib/types';
+
+// Display helpers only. Dates are stored in UTC and shown in the campus time zone, which callers get
+// from useTimeZone() in lib/campus.tsx.
 
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
@@ -10,14 +12,15 @@ export function formatMoney(cents: Cents): string {
 
 export function formatDate(
   iso: ISODate,
+  tz: string,
   opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' },
 ): string {
-  return new Intl.DateTimeFormat('en-US', { timeZone: DISPLAY_TIME_ZONE, ...opts }).format(new Date(iso));
+  return new Intl.DateTimeFormat('en-US', { timeZone: tz, ...opts }).format(new Date(iso));
 }
 
-export function formatDateTime(iso: ISODate): string {
+export function formatDateTime(iso: ISODate, tz: string): string {
   return new Intl.DateTimeFormat('en-US', {
-    timeZone: DISPLAY_TIME_ZONE,
+    timeZone: tz,
     weekday: 'short',
     month: 'short',
     day: 'numeric',
@@ -26,24 +29,43 @@ export function formatDateTime(iso: ISODate): string {
   }).format(new Date(iso));
 }
 
-export function formatTime(iso: ISODate): string {
-  return new Intl.DateTimeFormat('en-US', {
-    timeZone: DISPLAY_TIME_ZONE,
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(new Date(iso));
+export function formatTime(iso: ISODate, tz: string): string {
+  return new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit' }).format(
+    new Date(iso),
+  );
 }
 
-export function formatWindow(startsAt: ISODate, endsAt: ISODate): string {
-  return `${formatDate(startsAt, { weekday: 'short', month: 'short', day: 'numeric' })}, ${formatTime(startsAt)} to ${formatTime(endsAt)}`;
+export function formatWindow(startsAt: ISODate, endsAt: ISODate, tz: string): string {
+  return `${formatDate(startsAt, tz, { weekday: 'short', month: 'short', day: 'numeric' })}, ${formatTime(startsAt, tz)} to ${formatTime(endsAt, tz)}`;
 }
 
-export function timeAgo(iso: ISODate, now: Date = new Date()): string {
+/** A business date that may not be set yet. */
+export function formatMaybeDate(iso: ISODate | null | undefined, tz: string): string {
+  return iso
+    ? formatDate(iso, tz, { month: 'long', day: 'numeric', year: 'numeric' })
+    : 'date to be announced';
+}
+
+export function timeAgo(iso: ISODate, tz: string, now: Date = new Date()): string {
   const mins = Math.max(0, Math.round((now.getTime() - new Date(iso).getTime()) / 60000));
   if (mins < 60) return `${mins}m ago`;
   if (mins < 60 * 24) return `${Math.floor(mins / 60)}h ago`;
   if (mins < 60 * 48) return 'Yesterday';
-  return formatDate(iso);
+  return formatDate(iso, tz);
+}
+
+/** Time left until `endsAt`, for countdowns. Display only. */
+export function timeLeft(
+  endsAt: ISODate,
+  now: Date = new Date(),
+): { days: number; hours: number; minutes: number; done: boolean } {
+  const ms = Math.max(0, new Date(endsAt).getTime() - now.getTime());
+  return {
+    days: Math.floor(ms / 86_400_000),
+    hours: Math.floor((ms % 86_400_000) / 3_600_000),
+    minutes: Math.floor((ms % 3_600_000) / 60_000),
+    done: ms === 0,
+  };
 }
 
 export function shortName(u: { firstName: string; lastInitial: string }): string {
@@ -55,9 +77,4 @@ export function labelFor<T extends string>(
   id: T | null | undefined,
 ): string {
   return list.find((x) => x.id === id)?.label ?? '';
-}
-
-/** Basis points as a percent label: 6000 becomes "60%". Display only. */
-export function formatPercent(bps: number): string {
-  return `${Number((bps / 100).toFixed(2))}%`;
 }

@@ -6,6 +6,7 @@ import { OrderRow } from '@/components/orders/order-row';
 import { EmptyState, ErrorState, ListSkeleton } from '@/components/states';
 import { useQuery } from '@/lib/hooks';
 import { getMyOrders } from '@/lib/queries/orders';
+import { errorMessage } from '@/lib/errorMessages';
 
 export default function OrdersPage() {
   const { state, retry } = useQuery(() => getMyOrders(), []);
@@ -15,7 +16,7 @@ export default function OrdersPage() {
       {state.status === 'loading' ? (
         <ListSkeleton rows={5} />
       ) : state.status === 'error' ? (
-        <ErrorState message={state.error.message} onRetry={retry} />
+        <ErrorState message={errorMessage(state.error)} onRetry={retry} />
       ) : state.data.length === 0 ? (
         <EmptyState
           icon={Package}
@@ -31,7 +32,7 @@ export default function OrdersPage() {
             </h2>
             <ul className="flex flex-col gap-3">
               {state.data
-                .filter((s) => s.order.status === 'held' || s.order.status === 'disputed')
+                .filter((s) => s.order.status === 'held' || s.order.status === 'pending_payment')
                 .map((s) => (
                   <li key={s.order.id}>
                     <OrderRow summary={s} />
@@ -45,7 +46,7 @@ export default function OrdersPage() {
             </h2>
             <ul className="flex flex-col gap-3">
               {state.data
-                .filter((s) => s.order.status !== 'held' && s.order.status !== 'disputed')
+                .filter((s) => s.order.status !== 'held' && s.order.status !== 'pending_payment')
                 .map((s) => (
                   <li key={s.order.id}>
                     <OrderRow summary={s} />
