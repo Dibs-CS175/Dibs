@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { errorMessage } from '@/lib/errorMessages';
 import { useQuery } from '@/lib/hooks';
 import { getSession } from '@/lib/queries/users';
 import type { UserRole } from '@/lib/types';
@@ -32,7 +33,7 @@ export function RequireSession({ role, children }: { role?: UserRole; children: 
 
   if (state.status === 'loading' && passed.current) return <>{children}</>;
   if (state.status === 'loading' || signedOut) return <PageSkeleton />;
-  if (state.status === 'error') return <ErrorState message={state.error.message} onRetry={retry} />;
+  if (state.status === 'error') return <ErrorState message={errorMessage(state.error)} onRetry={retry} />;
   if (forbidden) {
     return (
       <div className="container py-16">

@@ -13,13 +13,15 @@ import { intakeGoods } from '@/lib/actions/goods';
 import { CATEGORIES } from '@/lib/config/app';
 import { formatDate } from '@/lib/format';
 import { useAction } from '@/lib/hooks';
-import { messageFor } from '@/lib/result';
+import { errorMessage } from '@/lib/errorMessages';
+import { useTimeZone } from '@/lib/campus';
 import type { GoodsIntakeInput, GoodsItem } from '@/lib/types';
 
 const MONEY_RE = /^\d+(\.\d{1,2})?$/;
 const toCents = (v: string) => (v === '' ? null : Math.round(Number(v) * 100));
 
 export default function GoodsIntakePage() {
+  const tz = useTimeZone();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<GoodsIntakeInput['category']>('');
   const [photos, setPhotos] = useState<string[]>([]);
@@ -46,14 +48,14 @@ export default function GoodsIntakePage() {
           <p>
             Hold until{' '}
             <strong>
-              {formatDate(saved.holdUntil, {
+              {formatDate(saved.holdUntil, tz, {
                 weekday: 'short',
                 month: 'short',
                 day: 'numeric',
                 year: 'numeric',
               })}
             </strong>
-            . It can be listed after that.
+            . It stays unlisted until then.
           </p>
         ) : (
           <p>No hold period. It can be listed now.</p>
@@ -201,7 +203,9 @@ export default function GoodsIntakePage() {
         </Field>
         <FormError
           message={
-            intake.error ? messageFor(intake.error, { VALIDATION: 'Check the fields and try again.' }) : null
+            intake.error
+              ? errorMessage(intake.error, { VALIDATION: 'Check the fields and try again.' })
+              : null
           }
         />
         <Button type="submit" className="w-fit" disabled={intake.pending}>

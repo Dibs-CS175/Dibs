@@ -1,10 +1,9 @@
-import { simulate } from '@/lib/dev';
-import { goods } from '@/lib/fixtures/goods';
-import type { Result } from '@/lib/result';
-import type { GoodsItem, GoodsStatus } from '@/lib/types';
+// Pages import from this file. Each function runs its Demo version (fixtures, lib/demo/queries/goods.ts)
+// or its Live version (your code, lib/live/queries/goods.ts), depending on the data source picked in
+// the preview panel (/dev). Nothing else belongs here.
 
-/** Goods inventory, optionally filtered by status on the backend. */
-export async function getGoods(status?: GoodsStatus): Promise<Result<GoodsItem[]>> {
-  // STUB(goods): replace with real implementation
-  return simulate(status ? goods.filter((g) => g.status === status) : goods, []);
-}
+import { choose } from '@/lib/dev/choose';
+import * as demo from '@/lib/demo/queries/goods';
+import * as live from '@/lib/live/queries/goods';
+
+export const getGoods = choose(demo.getGoods, live.getGoods);

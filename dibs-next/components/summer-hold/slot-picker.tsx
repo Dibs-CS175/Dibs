@@ -1,6 +1,9 @@
+'use client';
+
 import { formatDate, formatTime } from '@/lib/format';
 import type { SlotView } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { useTimeZone } from '@/lib/campus';
 
 /** Slots grouped by day. Full slots (decided by the backend) are disabled and labeled. */
 export function SlotPicker({
@@ -14,8 +17,11 @@ export function SlotPicker({
   onChange: (id: string) => void;
   name: string;
 }) {
+  const tz = useTimeZone();
   const days = Array.from(
-    new Set(slots.map((s) => formatDate(s.startsAt, { weekday: 'long', month: 'short', day: 'numeric' }))),
+    new Set(
+      slots.map((s) => formatDate(s.startsAt, tz, { weekday: 'long', month: 'short', day: 'numeric' })),
+    ),
   );
   return (
     <div className="flex flex-col gap-4">
@@ -25,7 +31,8 @@ export function SlotPicker({
           <div className="grid grid-cols-2 gap-2">
             {slots
               .filter(
-                (s) => formatDate(s.startsAt, { weekday: 'long', month: 'short', day: 'numeric' }) === day,
+                (s) =>
+                  formatDate(s.startsAt, tz, { weekday: 'long', month: 'short', day: 'numeric' }) === day,
               )
               .map((s) => (
                 <label
@@ -45,7 +52,7 @@ export function SlotPicker({
                     onChange={() => onChange(s.id)}
                   />
                   <span className="tabular font-semibold">
-                    {formatTime(s.startsAt)} to {formatTime(s.endsAt)}
+                    {formatTime(s.startsAt, tz)} to {formatTime(s.endsAt, tz)}
                   </span>
                   <span className="text-xs">{s.isFull ? 'Full' : `${s.booked} of ${s.capacity} booked`}</span>
                 </label>
@@ -59,8 +66,11 @@ export function SlotPicker({
 
 /** Read-only availability list, for the public explainer. */
 export function SlotAvailability({ slots }: { slots: SlotView[] }) {
+  const tz = useTimeZone();
   const days = Array.from(
-    new Set(slots.map((s) => formatDate(s.startsAt, { weekday: 'long', month: 'short', day: 'numeric' }))),
+    new Set(
+      slots.map((s) => formatDate(s.startsAt, tz, { weekday: 'long', month: 'short', day: 'numeric' })),
+    ),
   );
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -70,12 +80,13 @@ export function SlotAvailability({ slots }: { slots: SlotView[] }) {
           <ul className="flex flex-col gap-1">
             {slots
               .filter(
-                (s) => formatDate(s.startsAt, { weekday: 'long', month: 'short', day: 'numeric' }) === day,
+                (s) =>
+                  formatDate(s.startsAt, tz, { weekday: 'long', month: 'short', day: 'numeric' }) === day,
               )
               .map((s) => (
                 <li key={s.id} className="tabular flex justify-between gap-2 text-sm">
                   <span>
-                    {formatTime(s.startsAt)} to {formatTime(s.endsAt)}
+                    {formatTime(s.startsAt, tz)} to {formatTime(s.endsAt, tz)}
                   </span>
                   <span className={s.isFull ? 'text-muted' : 'font-semibold text-success'}>
                     {s.isFull ? 'Full' : 'Open'}

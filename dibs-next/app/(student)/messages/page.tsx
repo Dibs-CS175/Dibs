@@ -6,6 +6,7 @@ import { ConversationRow } from '@/components/messages/conversation-row';
 import { EmptyState, ErrorState, ListSkeleton } from '@/components/states';
 import { useQuery } from '@/lib/hooks';
 import { getInbox } from '@/lib/queries/messages';
+import { errorMessage } from '@/lib/errorMessages';
 
 export default function InboxPage() {
   const { state, retry } = useQuery(() => getInbox(), []);
@@ -15,7 +16,7 @@ export default function InboxPage() {
       {state.status === 'loading' ? (
         <ListSkeleton rows={6} />
       ) : state.status === 'error' ? (
-        <ErrorState message={state.error.message} onRetry={retry} />
+        <ErrorState message={errorMessage(state.error)} onRetry={retry} />
       ) : state.data.length === 0 ? (
         <EmptyState
           icon={MessageCircle}

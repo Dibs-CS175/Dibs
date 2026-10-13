@@ -1,9 +1,12 @@
+'use client';
+
 import { ListingPhoto } from '@/components/listing/listing-photo';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CATEGORIES } from '@/lib/config/app';
 import { formatDate, formatMoney, labelFor } from '@/lib/format';
 import type { GoodsItem, GoodsStatus } from '@/lib/types';
+import { useTimeZone } from '@/lib/campus';
 
 export const GOODS_STATUSES: { id: GoodsStatus; label: string }[] = [
   { id: 'intake', label: 'Intake' },
@@ -25,6 +28,7 @@ export function GoodsRow({
   onAction: (a: GoodsAction) => void;
   pending: boolean;
 }) {
+  const tz = useTimeZone();
   const open = item.status !== 'sold' && item.status !== 'disposed';
   return (
     <li className="flex flex-col gap-3 rounded-card border border-line bg-surface p-3 md:flex-row md:items-center">
@@ -37,11 +41,13 @@ export function GoodsRow({
         <div className="flex min-w-0 flex-col">
           <span className="truncate font-semibold">{item.title}</span>
           <span className="truncate text-sm text-muted">
-            {labelFor(CATEGORIES, item.category)} · in {formatDate(item.intakeDate)}
+            {labelFor(CATEGORIES, item.category)} · in {formatDate(item.intakeDate, tz)}
             {item.serialNumber ? ` · SN ${item.serialNumber}` : ''}
           </span>
           {item.holdUntil && item.status === 'holding' ? (
-            <span className="text-sm text-rind">Hold until {formatDate(item.holdUntil)}</span>
+            <span className="text-sm text-rind">
+              On hold, unlisted until {formatDate(item.holdUntil, tz)}
+            </span>
           ) : null}
         </div>
       </div>
@@ -60,7 +66,7 @@ export function GoodsRow({
       </div>
       {open ? (
         <div className="flex flex-wrap gap-2">
-          {item.status === 'intake' || item.status === 'holding' ? (
+          {item.status === 'intake' ? (
             <Button size="sm" disabled={pending} onClick={() => onAction('list')}>
               List
             </Button>

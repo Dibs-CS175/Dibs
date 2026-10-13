@@ -1,22 +1,10 @@
-import { simulate } from '@/lib/dev';
-import { getDevState } from '@/lib/dev/state';
-import { adminUser, me, users } from '@/lib/fixtures/users';
-import type { Result } from '@/lib/result';
-import type { Session, Settings, User } from '@/lib/types';
+// Pages import from this file. Each function runs its Demo version (fixtures, lib/demo/queries/users.ts)
+// or its Live version (your code, lib/live/queries/users.ts), depending on the data source picked in
+// the preview panel (/dev). Nothing else belongs here.
 
-/** The signed-in user, or null when signed out. */
-export async function getSession(): Promise<Result<Session | null>> {
-  // STUB(users): replace with real implementation
-  const { role } = getDevState();
-  return simulate(role === 'signed_out' ? null : { user: role === 'admin' ? adminUser : me });
-}
+import { choose } from '@/lib/dev/choose';
+import * as demo from '@/lib/demo/queries/users';
+import * as live from '@/lib/live/queries/users';
 
-export async function getUser(userId: string): Promise<Result<User>> {
-  // STUB(users): replace with real implementation
-  return simulate(users.find((u) => u.id === userId) ?? me);
-}
-
-export async function getSettings(): Promise<Result<Settings>> {
-  // STUB(users): replace with real implementation
-  return simulate<Settings>({ dibsGesture: 'hold', housingType: me.housingType });
-}
+export const getSession = choose(demo.getSession, live.getSession);
+export const getSettings = choose(demo.getSettings, live.getSettings);

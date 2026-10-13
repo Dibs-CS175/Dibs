@@ -12,6 +12,7 @@ const g = (
   extra: Partial<GoodsItem> = {},
 ): GoodsItem => ({
   id: `g${String(n).padStart(2, '0')}`,
+  campusId: 'riverside',
   title,
   category,
   photos: [`ph:${icon}:0`],
@@ -69,8 +70,12 @@ export const goods: GoodsItem[] = [
   g(17, 'Textbook bundle, chemistry', 'textbooks', 'BookOpen', 20, 0, 'intake', '2026-10-08T17:00:00Z'),
   g(18, 'Dining chairs, set of 2', 'furniture', 'Armchair', 25, 6, 'sold', '2026-08-28T17:00:00Z'),
   g(19, 'Air fryer', 'kitchen', 'Soup', 20, 5, 'sold', '2026-08-29T17:00:00Z'),
-  g(20, 'Longboard', 'bikes_boards', 'Disc3', 30, 8, 'sold', '2026-08-30T17:00:00Z'),
-  g(21, 'Rain jacket', 'clothing', 'Umbrella', 8, 0, 'sold', '2026-08-31T17:00:00Z'),
+  g(20, 'Longboard', 'bikes_boards', 'Disc3', 30, 8, 'sold', '2026-08-30T17:00:00Z', {
+    campusId: 'san-bernardino',
+  }),
+  g(21, 'Rain jacket', 'clothing', 'Umbrella', 8, 0, 'listed', '2026-08-31T17:00:00Z', {
+    campusId: 'san-bernardino',
+  }),
   g(22, 'Keyboard', 'electronics', 'Keyboard', 6, 1, 'sold', '2026-09-01T17:00:00Z'),
   g(23, 'Mattress topper', 'other', 'Layers', 0, 0, 'disposed', '2026-08-27T17:00:00Z'),
   g(24, 'Broken desk lamp', 'dorm_essentials', 'LampDesk', 0, 0, 'disposed', '2026-08-27T17:00:00Z'),

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ChevronLeft, ChevronRight, Save } from 'lucide-react';
@@ -18,11 +18,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { publishListing, saveListingDraft } from '@/lib/actions/listings';
 import { CATEGORIES, CONDITIONS, HOUSING_FITS } from '@/lib/config/app';
-import { formatTime } from '@/lib/format';
-import { useAction } from '@/lib/hooks';
-import { messageFor } from '@/lib/result';
+import { formatMoney, formatTime } from '@/lib/format';
+import { useAction, useQuery } from '@/lib/hooks';
+import { useTimeZone } from '@/lib/campus';
+import { getSellerPayoutQuote } from '@/lib/queries/pricing';
+import { ok } from '@/lib/result';
+import { QuoteLines } from '@/components/listing/quote-lines';
+import { ErrorState, LoadingBlock } from '@/components/states';
+import type { Quote } from '@/lib/types';
 import type { ListingDraftInput } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { errorMessage } from '@/lib/errorMessages';
 
 const STEPS = ['Photos', 'Details', 'Price', 'Review'];
 const PRICE_RE = /^\d+(\.\d{1,2})?$/;
@@ -56,6 +62,19 @@ export default function SellPage() {
 
   const set = (patch: Partial<ListingDraftInput>) => setDraft((d) => ({ ...d, ...patch }));
   const priceInvalid = !free && dollars !== '' && !PRICE_RE.test(dollars);
+  const tz = useTimeZone();
+
+  // The payout quote follows the price, a moment after typing stops.
+  const [quoteCents, setQuoteCents] = useState<number | null>(null);
+  useEffect(() => {
+    const cents = free ? 0 : PRICE_RE.test(dollars) ? Math.round(Number(dollars) * 100) : null;
+    const t = setTimeout(() => setQuoteCents(cents), 350);
+    return () => clearTimeout(t);
+  }, [dollars, free]);
+  const payout = useQuery(
+    () => (quoteCents === null ? Promise.resolve(ok<Quote | null>(null)) : getSellerPayoutQuote(quoteCents)),
+    [quoteCents],
+  );
 
   // Client checks only: required fields and formats. Everything else is the backend's call.
   const stepValid = [
@@ -108,7 +127,7 @@ export default function SellPage() {
       <Stepper steps={STEPS} current={step} />
       {savedAt ? (
         <p className="text-sm text-muted" aria-live="polite">
-          Draft saved at {formatTime(savedAt)}
+          Draft saved at {formatTime(savedAt, tz)}
         </p>
       ) : null}
 
@@ -259,12 +278,30 @@ export default function SellPage() {
                 />
               </Field>
             ) : null}
+            <section aria-label="Your payout" className="flex flex-col gap-2">
+              {payout.state.status === 'loading' ? (
+                <LoadingBlock className="h-28 rounded-card" />
+              ) : payout.state.status === 'error' ? (
+                <ErrorState message={errorMessage(payout.state.error)} onRetry={payout.retry} />
+              ) : payout.state.data === null ? (
+                <p className="rounded-card bg-sunk p-4 text-sm text-muted">
+                  Enter a price to see what you receive.
+                </p>
+              ) : (
+                <>
+                  <p className="tabular text-xl font-bold" aria-live="polite">
+                    You receive {formatMoney(payout.state.data.totalCents)}
+                  </p>
+                  <QuoteLines quote={payout.state.data} totalLabel="You receive" />
+                </>
+              )}
+            </section>
           </>
         ) : null}
 
         {step === 3 ? <ListingPreview draft={withPrice()} /> : null}
 
-        <FormError message={serverError ? messageFor(serverError, SELL_ERRORS) : null} />
+        <FormError message={serverError ? errorMessage(serverError, SELL_ERRORS) : null} />
 
         <div className="flex justify-between gap-3 border-t border-line pt-4">
           <Button variant="secondary" disabled={step === 0} onClick={() => setStep((s) => s - 1)}>

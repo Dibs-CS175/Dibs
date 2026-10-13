@@ -113,3 +113,12 @@ export function PageSkeleton() {
     </div>
   );
 }
+
+/** A single skeleton block inside a busy region, for loading states smaller than a page. */
+export function LoadingBlock({ className }: { className?: string }) {
+  return (
+    <div aria-busy="true" aria-label="Loading">
+      <Skeleton className={className} />
+    </div>
+  );
+}

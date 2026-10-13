@@ -1,21 +1,12 @@
-import { simulate } from '@/lib/dev';
-import { myBookingFixture, pickupSlots, returnSlots } from '@/lib/fixtures/summerHold';
-import type { Result } from '@/lib/result';
-import type { MyBooking, SlotView } from '@/lib/types';
+// Pages import from this file. Each function runs its Demo version (fixtures, lib/demo/queries/summerHold.ts)
+// or its Live version (your code, lib/live/queries/summerHold.ts), depending on the data source picked in
+// the preview panel (/dev). Nothing else belongs here.
 
-/** The signed-in student's booking, or null when they have none. */
-export async function getMyBooking(): Promise<Result<MyBooking | null>> {
-  // STUB(summerHold): replace with real implementation
-  return simulate<MyBooking | null>(myBookingFixture, null);
-}
+import { choose } from '@/lib/dev/choose';
+import * as demo from '@/lib/demo/queries/summerHold';
+import * as live from '@/lib/live/queries/summerHold';
 
-/** Pickup slots for move-out week. `isFull` is decided by the backend. */
-export async function getPickupSlots(): Promise<Result<SlotView[]>> {
-  // STUB(summerHold): replace with real implementation
-  return simulate(pickupSlots, []);
-}
-
-export async function getReturnSlots(): Promise<Result<SlotView[]>> {
-  // STUB(summerHold): replace with real implementation
-  return simulate(returnSlots, []);
-}
+export const getMyBooking = choose(demo.getMyBooking, live.getMyBooking);
+export const getPackingSlots = choose(demo.getPackingSlots, live.getPackingSlots);
+export const getPickupSlots = choose(demo.getPickupSlots, live.getPickupSlots);
+export const getParentPayView = choose(demo.getParentPayView, live.getParentPayView);

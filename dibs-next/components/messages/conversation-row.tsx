@@ -1,10 +1,14 @@
+'use client';
+
 import Link from 'next/link';
 import { ListingPhoto } from '@/components/listing/listing-photo';
 import { shortName, timeAgo } from '@/lib/format';
 import type { ConversationSummary } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { useTimeZone } from '@/lib/campus';
 
 export function ConversationRow({ summary }: { summary: ConversationSummary }) {
+  const tz = useTimeZone();
   const { conversation: c, listing, otherUser, lastMessagePreview } = summary;
   const unread = c.unreadCount > 0;
   return (
@@ -22,7 +26,7 @@ export function ConversationRow({ summary }: { summary: ConversationSummary }) {
           <span className={cn('truncate', unread ? 'font-bold' : 'font-semibold')}>
             {shortName(otherUser)}
           </span>
-          <span className="shrink-0 text-xs text-muted">{timeAgo(c.lastMessageAt)}</span>
+          <span className="shrink-0 text-xs text-muted">{timeAgo(c.lastMessageAt, tz)}</span>
         </div>
         <span className="truncate text-sm text-muted">{listing.title}</span>
         <span className={cn('truncate text-sm', unread ? 'font-semibold text-ink' : 'text-muted')}>

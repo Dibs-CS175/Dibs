@@ -21,8 +21,8 @@ export function SiteFooter() {
           >
             Summer Hold
           </Link>
-          <Link href="/impact" className="inline-flex min-h-[44px] items-center font-medium hover:text-rind">
-            Impact
+          <Link href="/sell" className="inline-flex min-h-[44px] items-center font-medium hover:text-rind">
+            Sell
           </Link>
         </nav>
       </div>

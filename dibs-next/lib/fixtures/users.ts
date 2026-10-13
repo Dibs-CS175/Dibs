@@ -1,82 +1,153 @@
 import type { User } from '@/lib/types';
 
 // Fictional people only.
-export const FIXTURE_NOW = '2026-10-08T19:00:00Z';
 
-export const me: User = {
-  id: 'u_me',
-  firstName: 'Alex',
-  lastInitial: 'D',
-  email: 'alex.d@ucr.edu',
-  housingType: 'hall',
-  role: 'student',
-  verified: true,
-  rating: 4.9,
-  tradesCount: 11,
-  memberSince: '2025-09-20T17:00:00Z',
-};
-
-export const adminUser: User = {
-  id: 'u_admin',
-  firstName: 'Jordan',
-  lastInitial: 'K',
-  email: 'jordan.k@ucr.edu',
-  housingType: 'off_campus',
-  role: 'admin',
-  verified: true,
-  rating: 5,
-  tradesCount: 0,
-  memberSince: '2025-08-01T17:00:00Z',
-};
-
-/** The account that owns Dibs Goods listings. */
-export const goodsAccount: User = {
-  id: 'u_goods',
-  firstName: 'Dibs Goods',
-  lastInitial: '',
-  email: 'goods@dibs.example',
-  housingType: null,
-  role: 'admin',
-  verified: true,
-  rating: 4.8,
-  tradesCount: 214,
-  memberSince: '2025-08-01T17:00:00Z',
-};
-
-const s = (
-  n: number,
+const u = (
+  id: string,
+  campusId: string,
   firstName: string,
   lastInitial: string,
+  domain: string,
   housingType: User['housingType'],
-  rating: number,
   tradesCount: number,
   memberSince: string,
+  referralCode: string,
+  role: User['role'] = 'student',
 ): User => ({
-  id: `u_s${String(n).padStart(2, '0')}`,
+  id,
+  campusId,
   firstName,
   lastInitial,
-  email: `${firstName.toLowerCase()}.${lastInitial.toLowerCase()}@ucr.edu`,
+  email: `${firstName.toLowerCase()}.${lastInitial.toLowerCase() || 'x'}@${domain}`,
   housingType,
-  role: 'student',
+  role,
   verified: true,
-  rating,
   tradesCount,
   memberSince,
+  referralCode,
 });
 
-export const sellers: User[] = [
-  s(1, 'Maya', 'R', 'hall', 4.9, 23, '2025-09-15T17:00:00Z'),
-  s(2, 'Jon', 'P', 'off_campus', 4.8, 17, '2025-09-15T17:00:00Z'),
-  s(3, 'Priya', 'S', 'campus_apartment', 5.0, 31, '2025-09-22T17:00:00Z'),
-  s(4, 'Diego', 'M', 'off_campus', 4.7, 9, '2026-01-10T17:00:00Z'),
-  s(5, 'Aaliyah', 'T', 'hall', 4.9, 14, '2025-09-29T17:00:00Z'),
-  s(6, 'Kenji', 'W', 'campus_apartment', 4.8, 12, '2026-03-30T17:00:00Z'),
-  s(7, 'Sofia', 'G', 'commuter', 4.6, 6, '2026-04-02T17:00:00Z'),
-  s(8, 'Marcus', 'L', 'off_campus', 4.9, 27, '2025-09-15T17:00:00Z'),
-  s(9, 'Hana', 'K', 'hall', 5.0, 8, '2026-01-12T17:00:00Z'),
-  s(10, 'Tomás', 'V', 'campus_apartment', 4.7, 19, '2025-09-18T17:00:00Z'),
-  s(11, 'Imani', 'B', 'off_campus', 4.9, 22, '2025-09-25T17:00:00Z'),
-  s(12, 'Ravi', 'N', 'off_campus', 4.8, 15, '2026-01-08T17:00:00Z'),
+export const me = u(
+  'u_me',
+  'riverside',
+  'Alex',
+  'D',
+  'ucr.edu',
+  'hall',
+  11,
+  '2025-09-20T17:00:00Z',
+  'ALEX-7KD2',
+);
+export const adminUser = u(
+  'u_admin',
+  'riverside',
+  'Jordan',
+  'K',
+  'ucr.edu',
+  'off_campus',
+  0,
+  '2025-08-01T17:00:00Z',
+  'JORDAN-3QP8',
+  'admin',
+);
+
+/** Accounts that own Dibs Goods listings, one per campus. */
+export const goodsAccounts: User[] = [
+  {
+    ...u(
+      'u_goods',
+      'riverside',
+      'Dibs Goods',
+      '',
+      'dibs.example',
+      null,
+      214,
+      '2025-08-01T17:00:00Z',
+      'GOODS-R',
+    ),
+    role: 'admin',
+  },
+  {
+    ...u(
+      'u_goods_sb',
+      'san-bernardino',
+      'Dibs Goods',
+      '',
+      'dibs.example',
+      null,
+      12,
+      '2026-08-01T17:00:00Z',
+      'GOODS-S',
+    ),
+    role: 'admin',
+  },
 ];
 
-export const users: User[] = [me, adminUser, goodsAccount, ...sellers];
+export const sellers: User[] = [
+  u('u_s01', 'riverside', 'Maya', 'R', 'ucr.edu', 'hall', 23, '2025-09-15T17:00:00Z', 'MAYA-R81'),
+  u('u_s02', 'riverside', 'Jon', 'P', 'ucr.edu', 'off_campus', 17, '2025-09-15T17:00:00Z', 'JON-P22'),
+  u(
+    'u_s03',
+    'riverside',
+    'Priya',
+    'S',
+    'ucr.edu',
+    'campus_apartment',
+    31,
+    '2025-09-22T17:00:00Z',
+    'PRIYA-S09',
+  ),
+  u('u_s04', 'riverside', 'Diego', 'M', 'ucr.edu', 'off_campus', 9, '2026-01-10T17:00:00Z', 'DIEGO-M44'),
+  u('u_s05', 'riverside', 'Aaliyah', 'T', 'ucr.edu', 'hall', 14, '2025-09-29T17:00:00Z', 'AALI-T15'),
+  u(
+    'u_s06',
+    'riverside',
+    'Kenji',
+    'W',
+    'ucr.edu',
+    'campus_apartment',
+    12,
+    '2026-03-30T17:00:00Z',
+    'KENJI-W60',
+  ),
+  u('u_s07', 'riverside', 'Sofia', 'G', 'ucr.edu', 'commuter', 6, '2026-04-02T17:00:00Z', 'SOFIA-G07'),
+  u('u_s08', 'riverside', 'Marcus', 'L', 'ucr.edu', 'off_campus', 27, '2025-09-15T17:00:00Z', 'MARC-L38'),
+  u('u_s09', 'riverside', 'Hana', 'K', 'ucr.edu', 'hall', 8, '2026-01-12T17:00:00Z', 'HANA-K19'),
+  u(
+    'u_s10',
+    'san-bernardino',
+    'Tomás',
+    'V',
+    'csusb.edu',
+    'campus_apartment',
+    19,
+    '2025-09-18T17:00:00Z',
+    'TOMAS-V10',
+  ),
+  u(
+    'u_s11',
+    'san-bernardino',
+    'Imani',
+    'B',
+    'csusb.edu',
+    'off_campus',
+    22,
+    '2025-09-25T17:00:00Z',
+    'IMANI-B11',
+  ),
+  u(
+    'u_s12',
+    'san-bernardino',
+    'Ravi',
+    'N',
+    'csusb.edu',
+    'off_campus',
+    15,
+    '2026-01-08T17:00:00Z',
+    'RAVI-N12',
+  ),
+];
+
+export const users: User[] = [me, adminUser, ...goodsAccounts, ...sellers];
+
+export const findUser = (id: string): User => users.find((x) => x.id === id) ?? sellers[0]!;

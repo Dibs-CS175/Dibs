@@ -32,7 +32,7 @@ export function useQuery<T>(fn: () => Promise<Result<T>>, deps: unknown[] = []) 
       live = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [...deps, nonce, dev.role, dev.mode, dev.errorCode, dev.scope]);
+  }, [...deps, nonce, dev.source, dev.role, dev.mode, dev.errorCode, dev.scope, dev.campusId]);
 
   const retry = useCallback(() => setNonce((n) => n + 1), []);
   const setData = useCallback((data: T) => setState({ status: 'data', data }), []);

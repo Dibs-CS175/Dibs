@@ -1,10 +1,7 @@
 import type { Category, Condition, HousingFit, HousingType } from '@/lib/types';
 
-/** Residence hall move-out day. Drives the Summer Hold countdown on the landing page. */
-export const MOVE_OUT_DATE = '2027-06-11T17:00:00Z';
-
-/** Time zone used to display every date and time. Stored values are UTC. */
-export const DISPLAY_TIME_ZONE = 'America/Los_Angeles';
+// App settings only. Business values (prices, fees, rates, tiers, business dates) live in
+// lib/fixtures/priceTable.json and are read through lib/queries/pricing.ts.
 
 /** Seconds before the verification code can be sent again. */
 export const RESEND_SECONDS = 30;
@@ -65,20 +62,9 @@ export const HOUSING_TYPES: { id: HousingType; label: string }[] = [
   { id: 'commuter', label: 'Commute from home' },
 ];
 
-export const MEETUP_SPOTS = ['Campus transit center', 'Library front steps (daytime)', 'Student union lobby'];
-
-export const RATING_TAGS = ['On time', 'As described', 'Friendly', 'Easy pickup'];
-
-export const REPORT_REASONS = [
-  'Item is not as described',
-  'Item is damaged',
-  'The other person did not show up',
-  'Prohibited item',
-  'Something else',
-];
-
 export const FEATURE_FLAGS = {
   summerHold: true,
+  parentPay: true,
   admin: true,
 };
 

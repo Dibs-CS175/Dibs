@@ -1,51 +1,13 @@
-import { simulate } from '@/lib/dev';
-import {
-  DIBS_PROTECT_FEE_CENTS,
-  SUMMER_HOLD_DEPOSIT_CENTS,
-  SUMMER_HOLD_LARGE_ITEM_CENTS,
-  SUMMER_HOLD_OFF_CAMPUS_SURCHARGE_CENTS,
-  SUMMER_HOLD_STANDARD_ITEM_CENTS,
-} from '@/lib/config/pricing';
-import { listings } from '@/lib/fixtures/listings';
-import type { Result } from '@/lib/result';
-import type { HousingType, Quote, StorageItemInput } from '@/lib/types';
+// Pages import from this file. Each function runs its Demo version (fixtures, lib/demo/queries/pricing.ts)
+// or its Live version (your code, lib/live/queries/pricing.ts), depending on the data source picked in
+// the preview panel (/dev). Nothing else belongs here.
 
-/**
- * Checkout quote for Hold to Dibs. Lines use the pricing placeholders.
- * The real backend computes `totalCents`; the stub returns the asking price because every fee placeholder is 0.
- */
-export async function getCheckoutQuote(listingId: string): Promise<Result<Quote>> {
-  // STUB(pricing): replace with real implementation
-  const l = listings.find((x) => x.id === listingId) ?? listings[1]!;
-  return simulate<Quote>({
-    lines: [
-      { label: 'Item', cents: l.priceCents },
-      { label: 'Dibs Protect fee', cents: DIBS_PROTECT_FEE_CENTS },
-    ],
-    totalCents: l.priceCents,
-  });
-}
+import { choose } from '@/lib/dev/choose';
+import * as demo from '@/lib/demo/queries/pricing';
+import * as live from '@/lib/live/queries/pricing';
 
-/**
- * Summer Hold quote. One line per item from the placeholders, plus surcharge and deposit lines.
- * The real backend computes `totalCents`; the stub returns 0 because every placeholder is 0.
- */
-export async function getSummerHoldQuote(
-  items: StorageItemInput[],
-  housingType: HousingType,
-): Promise<Result<Quote>> {
-  // STUB(pricing): replace with real implementation
-  return simulate<Quote>({
-    lines: [
-      ...items.map((i) => ({
-        label: `${i.label || 'Item'} (${i.size}${i.disposition === 'sell' ? ', to sell' : ''})`,
-        cents: i.size === 'large' ? SUMMER_HOLD_LARGE_ITEM_CENTS : SUMMER_HOLD_STANDARD_ITEM_CENTS,
-      })),
-      ...(housingType === 'off_campus'
-        ? [{ label: 'Off-campus pickup', cents: SUMMER_HOLD_OFF_CAMPUS_SURCHARGE_CENTS }]
-        : []),
-      { label: 'Deposit due today', cents: SUMMER_HOLD_DEPOSIT_CENTS },
-    ],
-    totalCents: 0,
-  });
-}
+export const getCheckoutQuote = choose(demo.getCheckoutQuote, live.getCheckoutQuote);
+export const getSellerPayoutQuote = choose(demo.getSellerPayoutQuote, live.getSellerPayoutQuote);
+export const getSummerHoldQuote = choose(demo.getSummerHoldQuote, live.getSummerHoldQuote);
+export const getSummerHoldTeaser = choose(demo.getSummerHoldTeaser, live.getSummerHoldTeaser);
+export const getSummerHoldOffers = choose(demo.getSummerHoldOffers, live.getSummerHoldOffers);

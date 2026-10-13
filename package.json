@@ -1,0 +1,17 @@
+{
+  "name": "dibs",
+  "private": true,
+  "description": "Runs the Dibs web app in dibs-next from the repository root.",
+  "scripts": {
+    "postinstall": "npm install --prefix dibs-next",
+    "dev": "npm run dev --prefix dibs-next",
+    "build": "npm run build --prefix dibs-next",
+    "start": "npm run start --prefix dibs-next",
+    "lint": "npm run lint --prefix dibs-next",
+    "typecheck": "npm run typecheck --prefix dibs-next",
+    "stubs": "node dibs-next/scripts/count-stubs.mjs"
+  },
+  "engines": {
+    "node": ">=18.17"
+  }
+}

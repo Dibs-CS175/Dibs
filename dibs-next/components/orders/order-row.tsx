@@ -1,11 +1,15 @@
+'use client';
+
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import { ListingPhoto } from '@/components/listing/listing-photo';
 import { OrderStatusBadge } from './order-status';
 import { formatDate, formatMoney, shortName } from '@/lib/format';
 import type { OrderSummary } from '@/lib/types';
+import { useTimeZone } from '@/lib/campus';
 
 export function OrderRow({ summary }: { summary: OrderSummary }) {
+  const tz = useTimeZone();
   const { order: o, listing, viewerRole, counterpart } = summary;
   return (
     <Link
@@ -20,7 +24,7 @@ export function OrderRow({ summary }: { summary: OrderSummary }) {
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="truncate font-semibold">{listing.title}</span>
         <span className="truncate text-sm text-muted">
-          {viewerRole === 'buyer' ? 'From' : 'To'} {shortName(counterpart)} · {formatDate(o.createdAt)}
+          {viewerRole === 'buyer' ? 'From' : 'To'} {shortName(counterpart)} · {formatDate(o.createdAt, tz)}
         </span>
         <OrderStatusBadge status={o.status} />
       </div>

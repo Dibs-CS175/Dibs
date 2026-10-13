@@ -1,7 +1,74 @@
-// Every domain type for Dibs. Money is always integer cents. Times are ISO 8601 strings in UTC.
+// Every domain type for Dibs. Money is integer cents. Times are ISO 8601 strings in UTC, displayed in
+// the campus time zone. Every record that belongs to a campus carries campusId.
 
 export type ISODate = string;
 export type Cents = number;
+
+/* ---------- Campus and pricing ---------- */
+
+export interface Campus {
+  id: string;
+  name: string;
+  emailDomain: string;
+  /** IANA time zone used to display this campus's dates. */
+  timezone: string;
+}
+
+export type RegistrationTierKey = string;
+
+export interface RegistrationTier {
+  key: RegistrationTierKey;
+  label: string;
+  cents: Cents;
+  endsAt: ISODate | null;
+}
+
+export type AddOnKey = 'protect_plus' | 'priority_window' | 'delivery';
+
+export interface AddOn {
+  key: AddOnKey;
+  label: string;
+  cents: Cents;
+  note: string;
+}
+
+/** One row per campus. Every business value the product uses lives here. */
+export interface PriceTable {
+  campusId: string;
+  startsAt: ISODate | null;
+  endsAt: ISODate | null;
+  itemStandardCents: Cents;
+  itemLargeCents: Cents;
+  standardBoxRule: { maxInches: [number, number, number]; maxPounds: number };
+  registrationTiers: RegistrationTier[];
+  cancelWindowDays: number;
+  balanceDueDate: ISODate | null;
+  fullService: { cents: Cents; maxItems: number };
+  addOns: AddOn[];
+  fees: {
+    overweightCents: Cents;
+    repackCents: Cents;
+    changeOrNoShowCents: Cents;
+    offCampusPickupCents: Cents;
+  };
+  coveragePerItemCents: Cents;
+  marketplace: { buyerPct: number; buyerFlatCents: Cents; sellerPct: number };
+  salesTaxRate: number;
+}
+
+export type QuoteLineKind = 'item' | 'fee' | 'tax' | 'addon' | 'credit';
+
+export interface QuoteLine {
+  label: string;
+  kind: QuoteLineKind;
+  cents: Cents;
+}
+
+/** Every price shown comes from a quote. The UI never adds lines up. */
+export interface Quote {
+  lines: QuoteLine[];
+  totalCents: Cents;
+}
 
 /* ---------- Users and marketplace ---------- */
 
@@ -10,19 +77,19 @@ export type UserRole = 'student' | 'admin';
 
 export interface User {
   id: string;
+  campusId: string;
   firstName: string;
   lastInitial: string;
   email: string;
   housingType: HousingType | null;
   role: UserRole;
   verified: boolean;
-  rating: number;
   tradesCount: number;
   memberSince: ISODate;
+  referralCode: string;
 }
 
-/** `consigned`: a student's item stored and sold by Dibs, which is the seller of record. */
-export type ListingSource = 'student' | 'goods' | 'consigned';
+export type ListingSource = 'student' | 'goods';
 export type Condition = 'new' | 'like_new' | 'good' | 'fair';
 export type HousingFit = 'dorm' | 'apartment' | 'not_allowed';
 export type ListingStatus = 'active' | 'claimed' | 'sold' | 'removed';
@@ -38,6 +105,7 @@ export type Category =
 
 export interface Listing {
   id: string;
+  campusId: string;
   sellerId: string;
   source: ListingSource;
   title: string;
@@ -46,37 +114,39 @@ export interface Listing {
   condition: Condition;
   category: Category;
   housingFit: HousingFit;
-  /** Image URLs. Fixtures use `ph:<icon>` keys that render a placeholder. */
+  /** Image URLs. Fixtures use `ph:<Icon>:<n>` keys that render a placeholder. */
   photos: string[];
   status: ListingStatus;
   createdAt: ISODate;
 }
 
-export interface QuoteLine {
-  label: string;
-  cents: Cents;
-}
-
-/** Every price shown at checkout comes from a quote. The UI never adds lines up. */
-export interface Quote {
-  lines: QuoteLine[];
-  totalCents: Cents;
-}
-
-export type OrderStatus = 'held' | 'released' | 'disputed' | 'cancelled' | 'refunded';
+export type OrderStatus = 'pending_payment' | 'held' | 'released' | 'cancelled' | 'refunded';
 
 export interface Order {
   id: string;
+  campusId: string;
   listingId: string;
   buyerId: string;
   sellerId: string;
   status: OrderStatus;
+  /** What the buyer pays. */
   quote: Quote;
-  /** Present only when the signed-in user is the buyer and the order is held. */
+  /** What the seller receives. */
+  payoutQuote: Quote;
+  /** Present only when the signed-in user is the buyer and payment is held. */
   handoffCodeVisibleToBuyer?: string;
-  meetupSpot?: string;
+  /** Present for the seller while payment is held. */
+  attemptsRemaining?: number;
+  meetupSpotId?: string;
   meetupTime?: ISODate;
   createdAt: ISODate;
+}
+
+export interface MeetupSpot {
+  id: string;
+  campusId: string;
+  name: string;
+  description: string;
 }
 
 export interface Conversation {
@@ -87,97 +157,51 @@ export interface Conversation {
   unreadCount: number;
 }
 
+export type MessageKind = 'text' | 'meetup_proposal';
+
 export interface Message {
   id: string;
   conversationId: string;
   senderId: string;
   body: string;
+  kind: MessageKind;
+  meetupSpotId?: string;
+  meetupTime?: ISODate;
   createdAt: ISODate;
   readAt?: ISODate;
 }
 
-export interface Rating {
-  orderId: string;
-  fromId: string;
-  toId: string;
-  stars: number;
-  tags: string[];
-}
+/* ---------- Summer Hold ---------- */
 
-export type ReportStatus = 'open' | 'resolved';
-
-export interface Report {
-  id: string;
-  orderId?: string;
-  listingId?: string;
-  reason: string;
-  status: ReportStatus;
-  createdAt: ISODate;
-}
-
-/* ---------- Summer Hold and logistics ---------- */
-
-export type BookingStatus =
-  | 'draft'
-  | 'deposit_paid'
-  | 'paid'
-  | 'picked_up'
-  | 'stored'
-  | 'returned'
-  | 'cancelled';
-
-export type ItemSize = 'standard' | 'large';
-/** What happens to a stored item: delivered back in fall, or sold by Dibs on consignment. */
-export type ItemDisposition = 'return' | 'sell';
-export type ConsignmentStatus =
-  | 'awaiting_checkin'
-  | 'awaiting_listing'
-  | 'listed'
-  | 'sold'
-  | 'payout_pending'
-  | 'paid_out'
-  | 'unsold_to_goods'
-  | 'withdrawn'
-  | 'damaged';
-/** Who caused damage to a consigned item. The backend decides the outcome for each cause. */
-export type DamageCause = 'storage_facility' | 'dibs' | 'buyer';
-export type StorageItemStatus = 'pending' | 'checked_in' | 'stored' | 'returned' | 'refused' | 'damaged';
-
-export interface StorageItem {
-  id: string;
-  bookingId: string;
-  label: string;
-  size: ItemSize;
-  status: StorageItemStatus;
-  disposition: ItemDisposition;
-  /** Present when disposition is `sell`. */
-  askingPriceCents?: Cents;
-  /** Set once Dibs lists the item. */
-  listingId?: string;
-  consignmentStatus?: ConsignmentStatus;
-  conditionPhoto?: string;
-  conditionNote?: string;
-  binId?: string;
-}
+export type BookingStatus = 'draft' | 'registered' | 'balance_paid' | 'cancelled';
 
 export interface SummerHoldBooking {
   id: string;
+  campusId: string;
   userId: string;
   status: BookingStatus;
   housingType: HousingType;
   address: string;
-  items: StorageItem[];
-  pickupSlotId?: string;
-  returnSlotId?: string;
+  standardCount: number;
+  largeCount: number;
+  registrationTierKey: RegistrationTierKey;
+  fullService: boolean;
+  packingSlotId?: string;
+  addOnKeys: AddOnKey[];
+  referralCode?: string;
+  parentPayToken?: string;
   quote: Quote;
-  balanceDueAt: ISODate;
+  registeredAt?: ISODate;
+  /** Set by the backend from the registration date and the campus cancel window. */
+  freeCancelUntil?: ISODate | null;
+  balanceDueAt: ISODate | null;
 }
 
-/** `storage_pickup`: windows when buyers collect consigned items at the storage unit. */
-export type SlotKind = 'pickup' | 'return' | 'storage_pickup';
+export type SlotKind = 'packing' | 'pickup';
 
 export interface Slot {
   id: string;
+  campusId: string;
   kind: SlotKind;
   startsAt: ISODate;
   endsAt: ISODate;
@@ -185,32 +209,13 @@ export interface Slot {
   booked: number;
 }
 
-export type RouteStopStatus = 'pending' | 'done' | 'missed';
-
-export interface RouteStop {
-  id: string;
-  slotId: string;
-  bookingId: string;
-  building: string;
-  address: string;
-  itemCount: number;
-  status: RouteStopStatus;
-}
-
-export interface Bin {
-  id: string;
-  unit: string;
-  label: string;
-  capacity: number;
-  used: number;
-}
-
-/* ---------- Goods and impact ---------- */
+/* ---------- Goods, referrals and offers ---------- */
 
 export type GoodsStatus = 'intake' | 'holding' | 'listed' | 'sold' | 'disposed';
 
 export interface GoodsItem {
   id: string;
+  campusId: string;
   title: string;
   category: Category;
   photos: string[];
@@ -222,17 +227,29 @@ export interface GoodsItem {
   intakeDate: ISODate;
 }
 
-export interface ImpactStats {
-  itemsKeptInUse: number;
-  estimatedPounds: number;
-  byCategory: { category: Category; items: number; pounds: number }[];
+export interface CreditLedgerEntry {
+  id: string;
+  userId: string;
+  cents: Cents;
+  reason: 'referral_given' | 'referral_received';
+  createdAt: ISODate;
+}
+
+export interface OfferEvent {
+  id: string;
+  userId: string;
+  campusId: string;
+  offerKey: string;
+  shownAt: ISODate;
+  chosen?: boolean;
 }
 
 /* ---------- View models returned by queries ---------- */
-/* Flags such as `isFull` or `canEditItems` are decided by the backend. The UI only reads them. */
+/* Flags such as `isFull` or `canCancel` are decided by the backend. The UI only reads them. */
 
 export interface Session {
   user: User;
+  campus: Campus;
 }
 
 export interface Settings {
@@ -303,14 +320,9 @@ export interface OrderSummary {
 }
 
 export interface OrderDetail extends OrderSummary {
-  /** True for consigned items: the buyer collects at the storage unit during a pickup window. */
-  pickupAtStorage: boolean;
-  storagePickupSlot: SlotView | null;
-  canChooseStorageSlot: boolean;
   timeline: TimelineStep[];
+  meetupSpot: MeetupSpot | null;
   canCancel: boolean;
-  canReport: boolean;
-  needsRating: boolean;
 }
 
 export interface ConversationSummary {
@@ -322,10 +334,13 @@ export interface ConversationSummary {
 
 export interface Thread {
   conversation: Conversation;
+  campusId: string;
   listing: Pick<Listing, 'id' | 'title' | 'photos' | 'priceCents' | 'status'>;
   otherUser: Pick<User, 'id' | 'firstName' | 'lastInitial'>;
   messages: Message[];
   viewerId: string;
+  /** Message ids of meetup proposals that have been accepted. */
+  acceptedProposalIds: string[];
   listingSold: boolean;
 }
 
@@ -333,83 +348,68 @@ export interface SlotView extends Slot {
   isFull: boolean;
 }
 
+/** Everything the Summer Hold screens show about the campus offer, straight from the price table. */
+export interface SummerHoldOffers {
+  campusId: string;
+  /** The tier in effect now. The backend picks it. */
+  currentTier: RegistrationTier;
+  itemStandardCents: Cents;
+  itemLargeCents: Cents;
+  standardBoxRule: PriceTable['standardBoxRule'];
+  fullService: PriceTable['fullService'];
+  addOns: AddOn[];
+  coveragePerItemCents: Cents;
+  cancelWindowDays: number;
+  balanceDueDate: ISODate | null;
+}
+
+export interface SummerHoldTeaser {
+  itemCount: number;
+  totalCents: Cents;
+}
+
+export interface SummerHoldInput {
+  campusId: string;
+  housingType: HousingType | '';
+  standardCount: number;
+  largeCount: number;
+  fullService: boolean;
+  addOnKeys: AddOnKey[];
+  referralCode: string;
+}
+
+export interface BookingDraftInput extends SummerHoldInput {
+  address: string;
+  packingSlotId: string | null;
+}
+
 export interface MyBooking {
   booking: SummerHoldBooking;
-  pickupSlot: SlotView | null;
-  returnSlot: SlotView | null;
-  canEditItems: boolean;
-  itemEditDeadline: ISODate;
-  canPayBalance: boolean;
+  packingSlot: SlotView | null;
   canCancel: boolean;
+  canPayBalance: boolean;
 }
 
-export interface StorageItemInput {
-  label: string;
-  size: ItemSize;
-  disposition: ItemDisposition;
-  askingPriceCents: Cents | null;
+export interface ParentPayView {
+  token: string;
+  studentFirstName: string;
+  campusName: string;
+  standardCount: number;
+  largeCount: number;
+  fullService: boolean;
+  quote: Quote;
+  paid: boolean;
 }
 
-/** Consignment terms as the backend states them. The UI shows these; it never applies them. */
-export interface ConsignmentTerms {
-  /** Dibs' share of the sale price, in basis points (6000 = 60%). */
-  commissionBps: number;
-  /** The student's share of the sale price, in basis points. */
-  ownerShareBps: number;
-  minAskingPriceCents: Cents;
-  unsoldPolicy: string;
-  damagePolicy: string;
-  /** Last day a consigned item stays listed before going to Dibs Goods. */
-  listUntil: ISODate;
-}
-
-export interface ConsignmentView {
-  item: StorageItem;
-  bookingId: string;
-  listing: Pick<Listing, 'id' | 'title' | 'photos' | 'priceCents' | 'status'> | null;
-  status: ConsignmentStatus;
-  /** Sale price, commission and payout lines. Null until the item sells. */
-  payout: Quote | null;
-  payoutSentAt?: ISODate;
-  listUntil: ISODate;
-  timeline: TimelineStep[];
-  canEditPrice: boolean;
-  canWithdraw: boolean;
-}
-
-export interface PayoutMethod {
-  status: 'not_set' | 'set';
-  /** Display label from the payment provider, e.g. "Bank account ending 4417". */
-  label: string | null;
-}
-
-/** Admin: a consigned item and its owner. */
-export interface ConsignmentAdminView extends ConsignmentView {
-  owner: Pick<User, 'id' | 'firstName' | 'lastInitial'>;
-  payoutMethod: PayoutMethod;
-}
-
-export interface ConsignedListingInput {
-  title: string;
-  category: Category | '';
-  condition: Condition | '';
-  housingFit: HousingFit | '';
+export interface ReferralCheck {
+  code: string;
+  /** Short description of the credit, written by the backend. */
   description: string;
 }
 
-export interface RouteStopView extends RouteStop {
-  items: StorageItem[];
-  window: { startsAt: ISODate; endsAt: ISODate };
-}
-
-export interface StopDetail {
-  stop: RouteStopView;
-  bins: BinView[];
-}
-
-export interface BinView extends Bin {
-  isFull: boolean;
-  items: StorageItem[];
+export interface OfferChoice {
+  offerKey: string;
+  chosen: boolean;
 }
 
 export interface GoodsIntakeInput {
@@ -419,9 +419,4 @@ export interface GoodsIntakeInput {
   priceCents: Cents | null;
   costCents: Cents | null;
   serialNumber: string;
-}
-
-export interface ReportView {
-  report: Report;
-  subject: string;
 }

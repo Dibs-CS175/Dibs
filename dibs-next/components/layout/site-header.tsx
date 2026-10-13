@@ -14,11 +14,10 @@ const LINKS = [
   { href: '/browse', label: 'Browse' },
   { href: '/sell', label: 'Sell' },
   { href: '/summer-hold', label: 'Summer Hold' },
-  { href: '/impact', label: 'Impact' },
 ];
 
 /** Presentational header. The layout passes the session user (or null) in. */
-export function SiteHeader({ user }: { user: UserT | null }) {
+export function SiteHeader({ user, campusName }: { user: UserT | null; campusName: string | null }) {
   const pathname = usePathname();
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const link = (href: string, label: string) => (
@@ -56,9 +55,14 @@ export function SiteHeader({ user }: { user: UserT | null }) {
         <Link href="/" className="rounded-input" aria-label="Dibs home">
           <Logo onDark size={24} />
         </Link>
+        {campusName ? (
+          <span className="hidden rounded-full bg-white/10 px-2 py-0.5 text-xs font-semibold text-white/90 lg:inline">
+            {campusName}
+          </span>
+        ) : null}
         <nav aria-label="Main" className="ml-4 hidden items-center gap-1 md:flex">
           {LINKS.map((l) => link(l.href, l.label))}
-          {user?.role === 'admin' ? link('/admin', 'Admin') : null}
+          {user?.role === 'admin' ? link('/admin/goods', 'Admin') : null}
         </nav>
         <div className="ml-auto flex items-center gap-1">
           {user ? (
