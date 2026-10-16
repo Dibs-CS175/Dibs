@@ -176,25 +176,25 @@ export interface Message {
 export type BookingStatus = 'draft' | 'registered' | 'balance_paid' | 'cancelled';
 
 export interface SummerHoldBooking {
-  id: string;
-  campusId: string;
-  userId: string;
+  id: string; //
+  campusId: string; //Connects to Campus.id + PriceTable.campusId
+  userId: string; //Connects to User.id
   status: BookingStatus;
   housingType: HousingType;
   address: string;
-  standardCount: number;
-  largeCount: number;
-  registrationTierKey: RegistrationTierKey;
-  fullService: boolean;
-  packingSlotId?: string;
-  addOnKeys: AddOnKey[];
-  referralCode?: string;
-  parentPayToken?: string;
+  standardCount: number; //Priced from PriceTable.itemStandardCents
+  largeCount: number; //Priced from PriceTable.itemLargeCents
+  registrationTierKey: RegistrationTierKey; //Connects to PriceTable.registrationTiers.key
+  fullService: boolean; //Connects to PriceTable.fullService
+  packingSlotId?: string; //Connects to Slot.id
+  addOnKeys: AddOnKey[]; //Connects to PriceTable.addOns.key
+  referralCode?: string; //Connects to User.referralCode + CreditLedgerEntry
+  parentPayToken?: string; //Connects to ParentPayView.token
   quote: Quote;
   registeredAt?: ISODate;
   /** Set by the backend from the registration date and the campus cancel window. */
   freeCancelUntil?: ISODate | null;
-  balanceDueAt: ISODate | null;
+  balanceDueAt: ISODate | null; //From PriceTable.balanceDueDate
 }
 
 export type SlotKind = 'packing' | 'pickup';
@@ -215,10 +215,14 @@ export type GoodsStatus = 'intake' | 'holding' | 'listed' | 'sold' | 'disposed';
 
 export interface GoodsItem {
   id: string;
-  campusId: string;
-  title: string;
-  category: Category;
-  photos: string[];
+  campusId: string; //Connects to Campus.id
+  listingId?: string; //Connects to Listing.id when listed
+  title: string; //Copied to Listing.title when listed
+  category: Category; //Copied to Listing.category when listed
+  condition?: Condition; //Connects to Listing.condition when listed
+  housingFit?: HousingFit; //Connects to Listing.housingFit when listed
+  description?: string; //Connects to Listing.description when listed
+  photos: string[]; //Copied to Listing.photos when listed
   priceCents: Cents;
   costCents?: Cents;
   serialNumber?: string;
