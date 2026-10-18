@@ -11,7 +11,9 @@ import { formatDateTime, formatMoney, formatTime } from '@/lib/format';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { FormError } from '@/components/ui/field';
+import { ErrorState, LoadingBlock } from '@/components/states';
+import { errorMessage } from '@/lib/errorMessages';
+import type { QueryState } from '@/lib/hooks';
 import type { MeetupSpot } from '@/lib/types';
 import type { Thread } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -218,17 +220,18 @@ export function MeetupSheet({
   open,
   onOpenChange,
   spots,
+  onRetrySpots,
   onPropose,
   pending,
-  error,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
-  spots: MeetupSpot[];
+  spots: QueryState<MeetupSpot[]>;
+  onRetrySpots: () => void;
   onPropose: (spotId: string, isoTime: string) => void;
   pending: boolean;
-  error: string | null;
 }) {
+  const spotList = spots.status === 'data' ? spots.data : [];
   const [spotId, setSpotId] = useState<string | null>(null);
   const [time, setTime] = useState('');
   const valid = spotId !== null && time !== '' && !Number.isNaN(new Date(time).getTime());
@@ -249,24 +252,32 @@ export function MeetupSheet({
         <div className="flex flex-col gap-4">
           <fieldset className="flex flex-col gap-2">
             <legend className="mb-1 font-semibold">Public spot</legend>
-            <div className="flex flex-wrap gap-2">
-              {spots.map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  aria-pressed={spotId === s.id}
-                  onClick={() => setSpotId(s.id)}
-                  className={cn(
-                    'min-h-[44px] rounded-full border px-4 text-left text-sm font-semibold',
-                    spotId === s.id ? 'border-grove bg-grove text-on-grove' : 'border-line bg-surface',
-                  )}
-                >
-                  {s.name}
-                </button>
-              ))}
-            </div>
+            {spots.status === 'loading' ? (
+              <LoadingBlock className="h-11 w-full rounded-full" />
+            ) : spots.status === 'error' ? (
+              <ErrorState message={errorMessage(spots.error)} onRetry={onRetrySpots} />
+            ) : spotList.length === 0 ? (
+              <p className="text-sm text-muted">No meetup spots are set up for this campus yet.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {spotList.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    aria-pressed={spotId === s.id}
+                    onClick={() => setSpotId(s.id)}
+                    className={cn(
+                      'min-h-[44px] rounded-full border px-4 text-left text-sm font-semibold',
+                      spotId === s.id ? 'border-grove bg-grove text-on-grove' : 'border-line bg-surface',
+                    )}
+                  >
+                    {s.name}
+                  </button>
+                ))}
+              </div>
+            )}
             {spotId ? (
-              <p className="text-sm text-muted">{spots.find((s) => s.id === spotId)?.description}</p>
+              <p className="text-sm text-muted">{spotList.find((s) => s.id === spotId)?.description}</p>
             ) : null}
           </fieldset>
           <div className="flex flex-col gap-1">
@@ -278,7 +289,6 @@ export function MeetupSheet({
               onChange={(e) => setTime(e.target.value)}
             />
           </div>
-          <FormError message={error} />
         </div>
       </SheetContent>
     </Sheet>

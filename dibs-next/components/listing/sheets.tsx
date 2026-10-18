@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/states';
+import { errorMessage } from '@/lib/errorMessages';
 import type { QueryState } from '@/lib/hooks';
 import type { Quote } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -53,7 +54,7 @@ export function CheckoutSheet({
           {quote.status === 'loading' ? (
             <Skeleton className="h-32 w-full rounded-card" />
           ) : quote.status === 'error' ? (
-            <ErrorState message={quote.error.message} onRetry={onRetryQuote} />
+            <ErrorState message={errorMessage(quote.error)} onRetry={onRetryQuote} />
           ) : (
             <QuoteLines quote={quote.data} />
           )}
