@@ -1,3 +1,4 @@
+-- Creates user profiles, auth-user synchronization, profile RLS, and updated-at behavior.
 create extension if not exists pgcrypto;
 
 create type public.user_role as enum ('student', 'admin');
@@ -10,6 +11,7 @@ create table if not exists public.users (
   last_initial text not null default '',
   email citext not null unique,
   housing_type public.user_housing_type,
+  dibs_gesture text not null default 'hold' check (dibs_gesture in ('hold', 'tap')),
   role public.user_role not null default 'student',
   verified boolean not null default false,
   trades_count integer not null default 0,
