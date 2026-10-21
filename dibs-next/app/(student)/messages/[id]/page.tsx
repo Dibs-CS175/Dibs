@@ -174,9 +174,9 @@ export default function ThreadPage({ params }: { params: { id: string } }) {
       <MeetupSheet
         open={meetupOpen}
         onOpenChange={setMeetupOpen}
-        spots={spotList}
+        spots={spots.state}
+        onRetrySpots={spots.retry}
         pending={false}
-        error={spots.state.status === 'error' ? errorMessage(spots.state.error) : null}
         onPropose={(spotId, time) => {
           setMeetupOpen(false);
           queue({ body: 'Suggested a meetup', meetup: { spotId, time } });

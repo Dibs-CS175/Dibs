@@ -24,8 +24,21 @@ export type ErrorOverrides = Partial<Record<ErrorCode, string>>;
 /**
  * NOT_IMPLEMENTED comes from a Live stub. Its message names the function and file, so it is shown as it is
  * to tell the team what to build next.
+ * CODE_INVALID adds how many tries are left when the screen passes attemptsLeft.
  */
-export function errorMessage(error: { code: ErrorCode; message?: string }, overrides: ErrorOverrides = {}): string {
+export function errorMessage(
+  error: { code: ErrorCode; message?: string },
+  overrides: ErrorOverrides = {},
+  opts: { attemptsLeft?: number } = {},
+): string {
   if (error.code === 'NOT_IMPLEMENTED' && error.message) return error.message;
-  return overrides[error.code] ?? ERROR_MESSAGES[error.code];
+
+  const base = overrides[error.code] ?? ERROR_MESSAGES[error.code];
+
+  if (error.code === 'CODE_INVALID' && opts.attemptsLeft !== undefined) {
+    const n = opts.attemptsLeft;
+    return `${base} ${n} ${n === 1 ? 'try' : 'tries'} left.`;
+  }
+
+  return base;
 }
