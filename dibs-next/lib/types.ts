@@ -53,7 +53,7 @@ export interface PriceTable {
   };
   coveragePerItemCents: Cents;
   marketplace: { buyerPct: number; buyerFlatCents: Cents; sellerPct: number };
-  salesTaxRate: number;
+  salesTaxBps: number;
 }
 
 export type QuoteLineKind = 'item' | 'fee' | 'tax' | 'addon' | 'credit';
