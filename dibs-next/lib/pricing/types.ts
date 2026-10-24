@@ -80,7 +80,7 @@ export type Offer = {
   selected: false;
 };
 
-// Thrown by the pure functions; the Live queries turn it into fail(code, message).
+// Thrown by the pure functions; the Live queries turn it into fail(code, message)
 export class PricingError extends Error {
   constructor(
     public code: 'VALIDATION' | 'DEADLINE_PASSED',
