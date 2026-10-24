@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import table from '../fixtures/priceTable.json';
-import { applyBps, currentTier, PricingError, type PriceRow } from './index';
+import { applyBps, checkoutLines, currentTier, PricingError, sellerPayout, type PriceRow } from './index';
 
 const rows = table as PriceRow[];
 const ucr = rows.find((r) => r.campusId === 'riverside')!;
@@ -18,6 +18,24 @@ describe('applyBps', () => {
 
   it('rejects a negative amount', () => {
     expect(() => applyBps(-100, 875)).toThrow(PricingError);
+  });
+});
+
+describe('marketplace checkout', () => {
+  it('prices a $20 item all-in', () => {
+    const q = checkoutLines(2000, ucr);
+    expect(q.buyerFeeCents).toBe(175);
+    expect(q.taxCents).toBe(190);
+    expect(q.totalCents).toBe(2365);
+  });
+
+  it('total equals the sum of its lines', () => {
+    const q = checkoutLines(2000, ucr);
+    expect(q.lines.reduce((s, l) => s + l.cents, 0)).toBe(q.totalCents);
+  });
+
+  it('pays the seller $19.00 on a $20 item', () => {
+    expect(sellerPayout(2000, ucr)).toBe(1900);
   });
 });
 
