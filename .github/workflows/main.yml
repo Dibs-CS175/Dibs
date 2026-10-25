@@ -25,9 +25,7 @@ jobs:
             dibs-next/package-lock.json
 
       - name: Install dependencies
-        run: |
-          npm ci --ignore-scripts
-          npm ci --prefix dibs-next
+        run: npm ci
 
       - name: Run ESLint
         run: npm run lint
@@ -49,9 +47,7 @@ jobs:
             dibs-next/package-lock.json
 
       - name: Install dependencies
-        run: |
-          npm ci --ignore-scripts
-          npm ci --prefix dibs-next
+        run: npm ci
 
       - name: Run TypeScript Typecheck
         run: npm run typecheck
@@ -73,9 +69,7 @@ jobs:
             dibs-next/package-lock.json
 
       - name: Install dependencies
-        run: |
-          npm ci --ignore-scripts
-          npm ci --prefix dibs-next
+        run: npm ci
 
       - name: Run Vitest Suite
         run: npm test
@@ -97,9 +91,7 @@ jobs:
             dibs-next/package-lock.json
 
       - name: Install dependencies
-        run: |
-          npm ci --ignore-scripts
-          npm ci --prefix dibs-next
+        run: npm ci
 
       - name: Run Stubs Script
         run: npm run stubs
