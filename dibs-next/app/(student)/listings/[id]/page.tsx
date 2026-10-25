@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { use, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -31,21 +31,22 @@ const HOLD_ERRORS = {
   NOT_FOUND: 'This listing is no longer available.',
 };
 
-export default function ListingPage({ params }: { params: { id: string } }) {
+export default function ListingPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
   const tz = useTimeZone();
   const { state: session } = useSession();
   const signedIn = session.status === 'data' && session.data !== null;
-  const { state, retry } = useQuery(() => getListing(params.id), [params.id]);
+  const { state, retry } = useQuery(() => getListing(id), [id]);
   const settings = useQuery(() => getSettings(), []);
-  const similar = useQuery(() => getSimilarListings(params.id), [params.id]);
+  const similar = useQuery(() => getSimilarListings(id), [id]);
   const [checkout, setCheckout] = useState(false);
   const quote = useQuery(
     () =>
       checkout
-        ? getCheckoutQuote(params.id)
+        ? getCheckoutQuote(id)
         : Promise.resolve({ ok: true as const, data: { lines: [], totalCents: 0 } }),
-    [checkout, params.id],
+    [checkout, id],
   );
   const [offerOpen, setOfferOpen] = useState(false);
   const hold = useAction(holdToDibs);
@@ -54,7 +55,7 @@ export default function ListingPage({ params }: { params: { id: string } }) {
   const remove = useAction(removeListing);
 
   const requireSignIn = () => {
-    router.push(`/verify?next=${encodeURIComponent(`/listings/${params.id}`)}`);
+    router.push(`/verify?next=${encodeURIComponent(`/listings/${id}`)}`);
   };
 
   if (state.status === 'loading') return <PageSkeleton />;
