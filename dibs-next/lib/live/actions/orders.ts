@@ -6,13 +6,49 @@
 // Replace a stub's body with real code and delete its STUB line; `npm run stubs` counts what is left.
 
 import { notImplemented } from '@/lib/live/not-implemented';
-import type { Result } from '@/lib/result';
+import { fail, ok, type Result } from '@/lib/result';
 import type { Order } from '@/lib/types';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 /** Claims a listing; Dibs Protect holds the payment. Errors: CONFLICT, PAYMENT_FAILED. */
 export async function holdToDibs(listingId: string): Promise<Result<Order>> {
-  // STUB(orders): replace with real implementation
-  return notImplemented('holdToDibs', 'lib/live/actions/orders.ts');
+  const supabase = await createSupabaseServerClient();
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return fail('NOT_SIGNED_IN', 'You must be signed in to call dibs.');
+  }
+
+  // Call our atomic Postgres function (first claim wins with row locking)
+  const { data, error } = await supabase.rpc('claim_listing', {
+    p_listing_id: listingId,
+    p_buyer_id: user.id,
+  });
+
+  if (error) {
+    return fail('UNKNOWN', `Database error during claim: ${error.message}`);
+  }
+
+  if (!data.ok) {
+    return fail(data.error_code, data.message);
+  }
+
+  // Fetch the newly created order record from Supabase
+  const { data: orderData, error: orderError } = await supabase
+    .from('orders')
+    .select('*')
+    .eq('id', data.order_id)
+    .single();
+
+  if (orderError || !orderData) {
+    return fail('UNKNOWN', 'Order was successfully claimed but could not be retrieved.');
+  }
+
+  return ok(orderData as unknown as Order);
 }
 
 /** Finishes payment for an order still waiting on it. Errors: PAYMENT_FAILED, CONFLICT. */
@@ -31,8 +67,8 @@ export async function makeOffer(
 }
 
 /**
- * Seller enters the buyer's code. The backend checks it.
- * Errors: CODE_INVALID (the order then shows fewer attemptsRemaining), ATTEMPTS_EXCEEDED.
+- Seller enters the buyer's code. The backend checks it.
+- Errors: CODE_INVALID (the order then shows fewer attemptsRemaining), ATTEMPTS_EXCEEDED.
  */
 export async function enterHandoffCode(orderId: string, code: string): Promise<Result<Order>> {
   // STUB(orders): replace with real implementation
