@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { use, useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { ChevronLeft, CreditCard, MapPin, PackageX } from 'lucide-react';
@@ -20,9 +20,10 @@ import { formatDateTime, shortName } from '@/lib/format';
 import { useAction, useQuery } from '@/lib/hooks';
 import { getOrder } from '@/lib/queries/orders';
 
-export default function OrderPage({ params }: { params: { id: string } }) {
+export default function OrderPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const tz = useTimeZone();
-  const { state, retry, setData } = useQuery(() => getOrder(params.id), [params.id]);
+  const { state, retry, setData } = useQuery(() => getOrder(id), [id]);
   const handoff = useAction(enterHandoffCode);
   const cancel = useAction(cancelOrder);
   const pay = useAction(payOrder);
