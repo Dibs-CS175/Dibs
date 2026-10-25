@@ -1,164 +1,163 @@
 [
   {
     "campusId": "riverside",
-    "_todo": "set from team research",
-    "startsAt": null,
-    "endsAt": null,
-    "itemStandardCents": 0,
-    "itemLargeCents": 0,
+    "startsAt": "2027-03-01T00:00:00-08:00",
+    "endsAt": "2028-02-29T23:59:59-08:00",
+    "itemStandardCents": 4900,
+    "itemLargeCents": 6900,
     "standardBoxRule": {
-      "maxInches": [0, 0, 0],
-      "maxPounds": 0,
-      "_todo": "set from team research"
+      "maxInches": [18, 18, 24],
+      "maxPounds": 50
     },
     "registrationTiers": [
       {
         "key": "early",
         "label": "Early registration",
-        "cents": 0,
-        "endsAt": null,
-        "_todo": "set from team research"
+        "cents": 2500,
+        "endsAt": "2027-04-15T23:59:59-07:00"
       },
       {
         "key": "standard",
         "label": "Standard registration",
-        "cents": 0,
-        "endsAt": null,
-        "_todo": "set from team research"
+        "cents": 3500,
+        "endsAt": "2027-05-27T23:59:59-07:00"
       },
       {
         "key": "final",
         "label": "Final days",
-        "cents": 0,
-        "endsAt": null,
-        "_todo": "set from team research"
+        "cents": 4500,
+        "endsAt": "2027-06-06T23:59:59-07:00"
       }
     ],
-    "cancelWindowDays": 0,
-    "balanceDueDate": null,
+    "cancelWindowDays": 14,
+    "balanceDueDate": "2027-06-01T23:59:59-07:00",
+    "pickupWindow": {
+      "startsAt": "2027-06-07T00:00:00-07:00",
+      "endsAt": "2027-06-13T23:59:59-07:00"
+    },
     "fullService": {
-      "cents": 0,
-      "maxItems": 0,
-      "_todo": "set from team research"
+      "cents": 44900,
+      "maxItems": 7
     },
     "addOns": [
       {
         "key": "protect_plus",
         "label": "Protect Plus",
-        "cents": 0,
-        "note": "Raises the coverage on every item in this booking.",
-        "_todo": "set from team research"
+        "cents": 2900,
+        "coveragePerItemCents": 50000,
+        "orderCapCents": 200000,
+        "note": "Raises the coverage on every item in this booking."
       },
       {
         "key": "priority_window",
         "label": "Priority pickup window",
-        "cents": 0,
-        "note": "A shorter, guaranteed pickup window.",
-        "_todo": "set from team research"
+        "cents": 1500,
+        "windowHours": 2,
+        "maxPerDay": 6,
+        "note": "A guaranteed 2-hour pickup window."
       },
       {
         "key": "delivery",
         "label": "Fall delivery",
-        "cents": 0,
-        "note": "We bring your items to your fall address within the delivery area.",
-        "_todo": "set from team research"
+        "cents": 2000,
+        "radiusMiles": 5,
+        "note": "We bring your items to your fall address within 5 miles."
       }
     ],
     "fees": {
-      "overweightCents": 0,
-      "repackCents": 0,
-      "changeOrNoShowCents": 0,
-      "offCampusPickupCents": 0,
-      "_todo": "set from team research"
+      "overweightCents": 2500,
+      "repackCents": 2000,
+      "changeOrNoShowCents": 2500,
+      "changeWindowHours": 48,
+      "offCampusPickupCents": 1000
     },
-    "coveragePerItemCents": 0,
+    "coveragePerItemCents": 15000,
     "marketplace": {
-      "buyerPct": 0,
-      "buyerFlatCents": 0,
-      "sellerPct": 0,
-      "_todo": "set from team research"
+      "buyerPct": 5,
+      "buyerFlatCents": 75,
+      "sellerPct": 5
     },
-    "salesTaxRate": 0
+    "salesTaxRate": 8.75
   },
   {
     "campusId": "san-bernardino",
-    "_todo": "set from team research",
-    "startsAt": null,
-    "endsAt": null,
-    "itemStandardCents": 0,
-    "itemLargeCents": 0,
+    "_todo": "All 2028 tier dates, balanceDueDate and pickupWindow are projected from the CSUSB 2026-27 catalog calendar and 2026-27 housing license agreement. Replace when CSUSB publishes the 2027-28 academic calendar and 2027-28 housing license agreement.",
+    "startsAt": "2028-03-01T00:00:00-08:00",
+    "endsAt": "2029-02-28T23:59:59-08:00",
+    "itemStandardCents": 4900,
+    "itemLargeCents": 6900,
     "standardBoxRule": {
-      "maxInches": [0, 0, 0],
-      "maxPounds": 0,
-      "_todo": "set from team research"
+      "maxInches": [18, 18, 24],
+      "maxPounds": 50
     },
     "registrationTiers": [
       {
         "key": "early",
         "label": "Early registration",
-        "cents": 0,
-        "endsAt": null,
-        "_todo": "set from team research"
+        "cents": 2500,
+        "endsAt": "2028-03-16T23:59:59-07:00"
       },
       {
         "key": "standard",
         "label": "Standard registration",
-        "cents": 0,
-        "endsAt": null,
-        "_todo": "set from team research"
+        "cents": 3500,
+        "endsAt": "2028-04-27T23:59:59-07:00"
       },
       {
         "key": "final",
         "label": "Final days",
-        "cents": 0,
-        "endsAt": null,
-        "_todo": "set from team research"
+        "cents": 4500,
+        "endsAt": "2028-05-07T23:59:59-07:00"
       }
     ],
-    "cancelWindowDays": 0,
-    "balanceDueDate": null,
+    "cancelWindowDays": 14,
+    "balanceDueDate": "2028-05-02T23:59:59-07:00",
+    "pickupWindow": {
+      "startsAt": "2028-05-08T00:00:00-07:00",
+      "endsAt": "2028-05-14T23:59:59-07:00"
+    },
     "fullService": {
-      "cents": 0,
-      "maxItems": 0,
-      "_todo": "set from team research"
+      "cents": 44900,
+      "maxItems": 7
     },
     "addOns": [
       {
         "key": "protect_plus",
         "label": "Protect Plus",
-        "cents": 0,
-        "note": "Raises the coverage on every item in this booking.",
-        "_todo": "set from team research"
+        "cents": 2900,
+        "coveragePerItemCents": 50000,
+        "orderCapCents": 200000,
+        "note": "Raises the coverage on every item in this booking."
       },
       {
         "key": "priority_window",
         "label": "Priority pickup window",
-        "cents": 0,
-        "note": "A shorter, guaranteed pickup window.",
-        "_todo": "set from team research"
+        "cents": 1500,
+        "windowHours": 2,
+        "maxPerDay": 6,
+        "note": "A guaranteed 2-hour pickup window."
       },
       {
         "key": "delivery",
         "label": "Fall delivery",
-        "cents": 0,
-        "note": "We bring your items to your fall address within the delivery area.",
-        "_todo": "set from team research"
+        "cents": 2000,
+        "radiusMiles": 5,
+        "note": "We bring your items to your fall address within 5 miles."
       }
     ],
     "fees": {
-      "overweightCents": 0,
-      "repackCents": 0,
-      "changeOrNoShowCents": 0,
-      "offCampusPickupCents": 0,
-      "_todo": "set from team research"
+      "overweightCents": 2500,
+      "repackCents": 2000,
+      "changeOrNoShowCents": 2500,
+      "changeWindowHours": 48,
+      "offCampusPickupCents": 1000
     },
-    "coveragePerItemCents": 0,
+    "coveragePerItemCents": 15000,
     "marketplace": {
-      "buyerPct": 0,
-      "buyerFlatCents": 0,
-      "sellerPct": 0,
-      "_todo": "set from team research"
+      "buyerPct": 5,
+      "buyerFlatCents": 75,
+      "sellerPct": 5
     },
-    "salesTaxRate": 0
+    "salesTaxRate": 8.75
   }
 ]

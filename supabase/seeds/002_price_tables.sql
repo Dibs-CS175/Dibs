@@ -1,0 +1,88 @@
+-- Static price-table seed values. Keep nested pricing structures as JSONB.
+insert into public.price_tables (
+  campus_id,
+  starts_at,
+  ends_at,
+  item_standard_cents,
+  item_large_cents,
+  standard_box_rule,
+  registration_tiers,
+  cancel_window_days,
+  balance_due_at,
+  pickup_window,
+  full_service,
+  add_ons,
+  fees,
+  coverage_per_item_cents,
+  marketplace,
+  sales_tax_bps
+)
+values
+  (
+    'riverside',
+    '2027-03-01T00:00:00-08:00',
+    '2028-02-29T23:59:59-08:00',
+    4900,
+    6900,
+    '{"maxInches":[18,18,24],"maxPounds":50}'::jsonb,
+    '[
+    {"key":"early",
+    "label":"Early registration",
+    "cents":2500,
+    "endsAt":"2027-04-15T23:59:59-07:00"},
+
+    {"key":"standard",
+    "label":"Standard registration",
+    "cents":3500,
+    "endsAt":"2027-05-27T23:59:59-07:00"},
+
+    {"key":"final",
+    "label":"Final days",
+    "cents":4500,
+    "endsAt":"2027-06-06T23:59:59-07:00"}
+    ]'::jsonb,
+    14,
+    '2027-06-01T23:59:59-07:00',
+    '{"startsAt":"2027-06-07T00:00:00-07:00",
+    "endsAt":"2027-06-13T23:59:59-07:00"}'::jsonb,
+    '{"cents":44900,"maxItems":7}'::jsonb,
+    '[{"key":"protect_plus","label":"Protect Plus","cents":2900,"coveragePerItemCents":50000,"orderCapCents":200000,"note":"Raises the coverage on every item in this booking."},{"key":"priority_window","label":"Priority pickup window","cents":1500,"windowHours":2,"maxPerDay":6,"note":"A guaranteed 2-hour pickup window."},{"key":"delivery","label":"Fall delivery","cents":2000,"radiusMiles":5,"note":"We bring your items to your fall address within 5 miles."}]'::jsonb,
+    '{"overweightCents":2500,"repackCents":2000,"changeOrNoShowCents":2500,"changeWindowHours":48,"offCampusPickupCents":1000}'::jsonb,
+    15000,
+    '{"buyerPct":5,"buyerFlatCents":75,"sellerPct":5}'::jsonb,
+    875
+  ),
+  (
+    'san-bernardino',
+    '2028-03-01T00:00:00-08:00',
+    '2029-02-28T23:59:59-08:00',
+    4900,
+    6900,
+    '{"maxInches":[18,18,24],"maxPounds":50}'::jsonb,
+    '[{"key":"early","label":"Early registration","cents":2500,"endsAt":"2028-03-16T23:59:59-07:00"},{"key":"standard","label":"Standard registration","cents":3500,"endsAt":"2028-04-27T23:59:59-07:00"},{"key":"final","label":"Final days","cents":4500,"endsAt":"2028-05-07T23:59:59-07:00"}]'::jsonb,
+    14,
+    '2028-05-02T23:59:59-07:00',
+    '{"startsAt":"2028-05-08T00:00:00-07:00","endsAt":"2028-05-14T23:59:59-07:00"}'::jsonb,
+    '{"cents":44900,"maxItems":7}'::jsonb,
+    '[{"key":"protect_plus","label":"Protect Plus","cents":2900,"coveragePerItemCents":50000,"orderCapCents":200000,"note":"Raises the coverage on every item in this booking."},{"key":"priority_window","label":"Priority pickup window","cents":1500,"windowHours":2,"maxPerDay":6,"note":"A guaranteed 2-hour pickup window."},{"key":"delivery","label":"Fall delivery","cents":2000,"radiusMiles":5,"note":"We bring your items to your fall address within 5 miles."}]'::jsonb,
+    '{"overweightCents":2500,"repackCents":2000,"changeOrNoShowCents":2500,"changeWindowHours":48,"offCampusPickupCents":1000}'::jsonb,
+    15000,
+    '{"buyerPct":5,"buyerFlatCents":75,"sellerPct":5}'::jsonb,
+    875
+  )
+on conflict (campus_id, starts_at) do update
+set ends_at = excluded.ends_at,
+    item_standard_cents = excluded.item_standard_cents,
+    item_large_cents = excluded.item_large_cents,
+    standard_box_rule = excluded.standard_box_rule,
+    registration_tiers = excluded.registration_tiers,
+    cancel_window_days = excluded.cancel_window_days,
+    balance_due_at = excluded.balance_due_at,
+    pickup_window = excluded.pickup_window,
+    full_service = excluded.full_service,
+    add_ons = excluded.add_ons,
+    fees = excluded.fees,
+    coverage_per_item_cents = excluded.coverage_per_item_cents,
+    marketplace = excluded.marketplace,
+    sales_tax_bps = excluded.sales_tax_bps,
+    updated_at = now();
