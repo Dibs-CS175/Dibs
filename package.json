@@ -9,6 +9,7 @@
     "start": "npm run start --prefix dibs-next",
     "lint": "npm run lint --prefix dibs-next",
     "typecheck": "npm run typecheck --prefix dibs-next",
+    "test": "npm run test --prefix dibs-next",
     "stubs": "node dibs-next/scripts/count-stubs.mjs"
   },
   "engines": {
