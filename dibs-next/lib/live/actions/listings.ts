@@ -195,6 +195,7 @@ export async function publishListing(draftId: string): Promise<Result<Listing>> 
 
   if (draftError) return fail('UNKNOWN', 'Could not load the listing draft.');
   if (!draft) return fail('NOT_FOUND', 'Listing draft not found.');
+
   if (
     !Array.isArray(draft.photos) ||
     !draft.photos.every((photo: unknown) => typeof photo === 'string') ||
@@ -274,6 +275,27 @@ export async function publishListing(draftId: string): Promise<Result<Listing>> 
 }
 
 export async function removeListing(listingId: string): Promise<Result<{ listingId: string }>> {
-  // STUB(listings): replace with real implementation
-  return notImplemented('removeListing', 'lib/live/actions/listings.ts');
+
+  if (typeof listingId !== 'string' || listingId.trim() === '') {
+    return fail('VALIDATION', 'listingId cannot be found');
+  }
+  const supabase = await createSupabaseServerClient();
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !authData.user) {
+    return fail('NOT_SIGNED_IN', 'Sign in to remove your listing.');
+  }
+    const {data:selectedListing, error: deleteListingError } = await supabase
+    .from('listings')
+    .update({
+      "status": 'removed'
+    })
+    .eq('id', listingId)
+    .eq('seller_id', authData.user.id)
+    .select('id')
+    .maybeSingle();
+
+    if(deleteListingError) return fail("UNKNOWN", "Some error/conflict occurred when attempting to delete listing");
+    if(!selectedListing) return fail('NOT_FOUND', "No listing found to be remove");
+    return ok({listingId});
 }
