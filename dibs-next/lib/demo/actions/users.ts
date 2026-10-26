@@ -22,7 +22,11 @@ export async function requestVerificationCode(
 export async function verifyCode(email: string, code: string): Promise<Result<Session>> {
   void code;
   const campus = campuses.find((c) => c.id === currentCampusId()) ?? campuses[0]!;
-  const r = await simulate<Session>({ user: { ...me, email, campusId: campus.id }, campus });
+  // housingType null previews the sign-up path (housing step). A returning user with housing set skips it.
+  const r = await simulate<Session>({
+    user: { ...me, email, campusId: campus.id, housingType: null },
+    campus,
+  });
   if (r.ok) setDevState({ role: 'student' });
   return r;
 }

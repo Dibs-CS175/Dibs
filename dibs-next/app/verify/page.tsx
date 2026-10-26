@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 import { Check, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,15 +13,20 @@ import { requestVerificationCode, setHousingType, verifyCode } from '@/lib/actio
 import { RESEND_SECONDS } from '@/lib/config/app';
 import { useAction } from '@/lib/hooks';
 import { errorMessage } from '@/lib/errorMessages';
+import { useSession } from '@/lib/session';
 import type { Campus, HousingType } from '@/lib/types';
 
 /** Format check only. Whether the address is a campus (.edu) address, and which campus, is the backend's call. */
 const looksLikeEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
+/** Only same-site paths, so a crafted link can't send someone to another site after they sign in. */
+const safeNext = (v: string | null) => (v && v.startsWith('/') && !v.startsWith('//') ? v : '/browse');
+
 function VerifyFlow() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get('next') || '/browse';
+  const next = safeNext(params.get('next'));
+  const { state: session } = useSession();
   const [step, setStep] = useState<'email' | 'code' | 'housing'>('email');
   const [email, setEmail] = useState('');
   const [touched, setTouched] = useState(false);
@@ -35,6 +41,12 @@ function VerifyFlow() {
   const saveHousing = useAction(setHousingType);
 
   useEffect(() => heading.current?.focus(), [step]);
+
+  // Already signed in: nothing to verify, go where they were headed.
+  const signedIn = session.status === 'data' && session.data !== null;
+  useEffect(() => {
+    if (signedIn && step === 'email') router.replace(next);
+  }, [signedIn, step, router, next]);
   useEffect(() => {
     if (step !== 'code' || resendIn <= 0) return;
     const t = setTimeout(() => setResendIn((s) => s - 1), 1000);
@@ -52,6 +64,7 @@ function VerifyFlow() {
     : null;
   const codeError = check.error
     ? errorMessage(check.error, {
+        VALIDATION: 'Enter the 6-digit code from the email.',
         CODE_INVALID: 'That code doesn’t match. Check the email and try again.',
         RATE_LIMITED: 'Too many tries. Wait a few minutes, then request a new code.',
       })
@@ -71,6 +84,13 @@ function VerifyFlow() {
   const submitCode = async (code: string) => {
     const r = await check.run(email.trim(), code);
     if (r?.ok) {
+      // Log in: a returning student already picked housing, so skip straight to where they were going.
+      if (r.data.user.housingType) {
+        toast.success(`Welcome back${r.data.user.firstName ? `, ${r.data.user.firstName}` : ''}.`);
+        router.replace(next);
+        return;
+      }
+      // Sign up: first time through, ask where they live.
       setCampus(r.data.campus);
       setStep('housing');
     } else setDigits(Array(6).fill(''));
@@ -84,7 +104,10 @@ function VerifyFlow() {
             <h1 ref={heading} tabIndex={-1} className="text-4xl font-extrabold md:text-5xl">
               Verify with your campus email
             </h1>
-            <p className="text-muted">Dibs is students only. We send a one-time code to your campus inbox.</p>
+            <p className="text-muted">
+              New or returning, it’s the same step. Dibs is students only, so we send a one-time code to your
+              campus inbox.
+            </p>
           </div>
           <div className="flex flex-col gap-1">
             <Label htmlFor="email">Campus email</Label>

@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Archive, BadgeCheck, Heart, LogOut, Package, Tag, type LucideIcon } from 'lucide-react';
+import { Archive, Heart, LogOut, Package, ShieldAlert, Tag, type LucideIcon } from 'lucide-react';
+import { VerifiedBadge } from '@/components/listing/badges';
 import { ListingCard } from '@/components/listing/listing-card';
 import { QuoteLines } from '@/components/listing/quote-lines';
 import { OrderRow } from '@/components/orders/order-row';
@@ -80,10 +81,16 @@ export default function ProfilePage() {
           <div className="flex flex-col gap-2">
             <h1 className="text-3xl font-extrabold md:text-5xl">{shortName(user)}</h1>
             <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
-              <span className="flex items-center gap-1 text-success">
-                <BadgeCheck className="h-4 w-4" aria-hidden /> Verified student
-                {campus ? ` · ${campus.name}` : ''}
-              </span>
+              {user.verified ? (
+                <VerifiedBadge verified label={`Verified student${campus ? ` · ${campus.name}` : ''}`} />
+              ) : (
+                <span className="flex items-center gap-1 text-rind">
+                  <ShieldAlert className="h-4 w-4" aria-hidden /> Not verified yet ·{' '}
+                  <Link href="/verify?next=/profile" className="font-semibold underline">
+                    Verify your campus email
+                  </Link>
+                </span>
+              )}
               <span className="tabular">{user.tradesCount} trades</span>
               <span>Since {formatDate(user.memberSince, tz, { month: 'short', year: 'numeric' })}</span>
             </p>
@@ -97,8 +104,10 @@ export default function ProfilePage() {
           disabled={out.pending}
           onClick={async () => {
             const r = await out.run();
-            if (r?.ok) router.push('/');
-            else if (r) toast.error(errorMessage(r.error));
+            if (r?.ok) {
+              router.push('/');
+              router.refresh();
+            } else if (r) toast.error(errorMessage(r.error));
           }}
         >
           <LogOut className="h-4 w-4" aria-hidden /> {out.pending ? 'Signing out…' : 'Sign out'}
