@@ -14,6 +14,8 @@ import type { ListingCardView, ListingDetail, ListingSearch, Page } from '@/lib/
  * Search, filter and sort happen on the backend, scoped to the user's campus. Return pages of results:
  * the first when no cursor is passed, then the next page for each `nextCursor`.
  */
+
+// returns a page containing a large list of listings. 
 export async function searchListings(params: ListingSearch): Promise<Result<Page<ListingCardView>>> {
   const pageSize = 12;
   const supabase = await createSupabaseServerClient();
@@ -109,7 +111,7 @@ export async function searchListings(params: ListingSearch): Promise<Result<Page
     nextCursor: hasMore ? String(offset + pageSize) : null,
   });
 }
-
+// gets all the details from one specified listing
 export async function getListing(listingId: string): Promise<Result<ListingDetail>> {
   const supabase = await createSupabaseServerClient();
   const { data: authData, error: authError } = await supabase.auth.getUser();
@@ -186,7 +188,7 @@ export async function getListing(listingId: string): Promise<Result<ListingDetai
     isOwn: listing.seller_id === authData.user.id,
   });
 }
-
+// gets users published listings.
 export async function getMyListings(): Promise<Result<ListingCardView[]>> {
   const supabase = await createSupabaseServerClient();
   const { data: authData, error: authError } = await supabase.auth.getUser();
@@ -248,7 +250,7 @@ export async function getMyListings(): Promise<Result<ListingCardView[]>> {
     }),
   );
 }
-
+//Gets listings from users saved listings.
 export async function getSavedListings(): Promise<Result<ListingCardView[]>> {
   const supabase = await createSupabaseServerClient();
   const { data: authData, error: authError } = await supabase.auth.getUser();
@@ -322,7 +324,7 @@ export async function getSavedListings(): Promise<Result<ListingCardView[]>> {
     }),
   );
 }
-
+//Grabs target listing, and looks for other active listings that have similar categories.
 export async function getSimilarListings(listingId: string): Promise<Result<ListingCardView[]>> {
   const supabase = await createSupabaseServerClient();
   const { data: authData, error: authError } = await supabase.auth.getUser();
