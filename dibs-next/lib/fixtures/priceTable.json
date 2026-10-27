@@ -77,7 +77,7 @@
       "buyerFlatCents": 75,
       "sellerPct": 5
     },
-    "salesTaxRate": 8.75
+    "salesTaxBps": 875
   },
   {
     "campusId": "san-bernardino",
@@ -158,6 +158,6 @@
       "buyerFlatCents": 75,
       "sellerPct": 5
     },
-    "salesTaxRate": 8.75
+    "salesTaxBps": 875
   }
 ]
