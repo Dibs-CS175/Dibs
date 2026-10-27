@@ -188,16 +188,212 @@ export async function getListing(listingId: string): Promise<Result<ListingDetai
 }
 
 export async function getMyListings(): Promise<Result<ListingCardView[]>> {
-  // STUB(listings): replace with real implementation
-  return notImplemented('getMyListings', 'lib/live/queries/listings.ts');
+  const supabase = await createSupabaseServerClient();
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError || !authData.user) {
+    return fail('NOT_SIGNED_IN', 'Sign in to view your listings.');
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from('users')
+    .select('campus_id')
+    .eq('id', authData.user.id)
+    .maybeSingle();
+
+  if (profileError) return fail('UNKNOWN', 'Could not verify your campus.');
+  if (!profile) return fail('NOT_FOUND', 'User profile not found.');
+
+  const { data, error } = await supabase
+    .from('listings')
+    .select(
+      'id, campus_id, seller_id, source, title, description, price_cents, condition, category, housing_fit, status, created_at, listing_photos(photo_url, position), seller:users!listings_seller_id_fkey(id, first_name, last_initial, verified), saved_listings(listing_id)',
+    )
+    .eq('campus_id', profile.campus_id)
+    .eq('seller_id', authData.user.id)
+    .order('created_at', { ascending: false });
+
+  if (error) return fail('UNKNOWN', 'Could not retrieve your listings.');
+
+  return ok(
+    data.map((row) => {
+      const seller = Array.isArray(row.seller) ? row.seller[0] : row.seller;
+      const photos = [...row.listing_photos].sort((a, b) => a.position - b.position);
+
+      return {
+        listing: {
+          id: row.id,
+          campusId: row.campus_id,
+          sellerId: row.seller_id ?? 'dibs',
+          source: row.source,
+          title: row.title,
+          description: row.description,
+          priceCents: row.price_cents,
+          condition: row.condition,
+          category: row.category,
+          housingFit: row.housing_fit,
+          photos: photos.map((photo) => photo.photo_url),
+          status: row.status,
+          createdAt: row.created_at,
+        },
+        seller: seller
+          ? {
+              id: seller.id,
+              firstName: seller.first_name,
+              lastInitial: seller.last_initial,
+              verified: seller.verified,
+            }
+          : { id: 'dibs', firstName: 'Dibs', lastInitial: '', verified: false },
+        saved: row.saved_listings.length > 0,
+      };
+    }),
+  );
 }
 
 export async function getSavedListings(): Promise<Result<ListingCardView[]>> {
-  // STUB(listings): replace with real implementation
-  return notImplemented('getSavedListings', 'lib/live/queries/listings.ts');
+  const supabase = await createSupabaseServerClient();
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError || !authData.user) {
+    return fail('NOT_SIGNED_IN', 'Sign in to view saved listings.');
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from('users')
+    .select('campus_id')
+    .eq('id', authData.user.id)
+    .maybeSingle();
+
+  if (profileError) return fail('UNKNOWN', 'Could not verify your campus.');
+  if (!profile) return fail('NOT_FOUND', 'User profile not found.');
+
+  const { data: savedRows, error: savedError } = await supabase
+    .from('saved_listings')
+    .select('listing_id')
+    .eq('user_id', authData.user.id);
+
+  if (savedError) return fail('UNKNOWN', 'Could not retrieve your saved listings.');
+  if (savedRows.length === 0) return ok([]);
+
+  const { data, error } = await supabase
+    .from('listings')
+    .select(
+      'id, campus_id, seller_id, source, title, description, price_cents, condition, category, housing_fit, status, created_at, listing_photos(photo_url, position), seller:users!listings_seller_id_fkey(id, first_name, last_initial, verified)',
+    )
+    .eq('campus_id', profile.campus_id)
+    .eq('status', 'active')
+    .in(
+      'id',
+      savedRows.map((row) => row.listing_id),
+    )
+    .order('created_at', { ascending: false });
+
+  if (error) return fail('UNKNOWN', 'Could not retrieve your saved listings.');
+
+  return ok(
+    data.map((row) => {
+      const seller = Array.isArray(row.seller) ? row.seller[0] : row.seller;
+      const photos = [...row.listing_photos].sort((a, b) => a.position - b.position);
+
+      return {
+        listing: {
+          id: row.id,
+          campusId: row.campus_id,
+          sellerId: row.seller_id ?? 'dibs',
+          source: row.source,
+          title: row.title,
+          description: row.description,
+          priceCents: row.price_cents,
+          condition: row.condition,
+          category: row.category,
+          housingFit: row.housing_fit,
+          photos: photos.map((photo) => photo.photo_url),
+          status: row.status,
+          createdAt: row.created_at,
+        },
+        seller: seller
+          ? {
+              id: seller.id,
+              firstName: seller.first_name,
+              lastInitial: seller.last_initial,
+              verified: seller.verified,
+            }
+          : { id: 'dibs', firstName: 'Dibs', lastInitial: '', verified: false },
+        saved: true,
+      };
+    }),
+  );
 }
 
 export async function getSimilarListings(listingId: string): Promise<Result<ListingCardView[]>> {
-  // STUB(listings): replace with real implementation
-  return notImplemented('getSimilarListings', 'lib/live/queries/listings.ts');
+  const supabase = await createSupabaseServerClient();
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError || !authData.user) {
+    return fail('NOT_SIGNED_IN', 'Sign in to view listings.');
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from('users')
+    .select('campus_id')
+    .eq('id', authData.user.id)
+    .maybeSingle();
+
+  if (profileError) return fail('UNKNOWN', 'Could not verify your campus.');
+  if (!profile) return fail('NOT_FOUND', 'User profile not found.');
+
+  const { data: target, error: targetError } = await supabase
+    .from('listings')
+    .select('category')
+    .eq('id', listingId)
+    .eq('campus_id', profile.campus_id)
+    .eq('status', 'active')
+    .maybeSingle();
+
+  if (targetError) return fail('UNKNOWN', 'Could not retrieve this listing.');
+  if (!target) return fail('NOT_FOUND', 'Listing not found.');
+
+  const { data, error } = await supabase
+    .from('listings')
+    .select(
+      'id, campus_id, seller_id, source, title, description, price_cents, condition, category, housing_fit, status, created_at, listing_photos(photo_url, position), seller:users!listings_seller_id_fkey(id, first_name, last_initial, verified), saved_listings(listing_id)',
+    )
+    .eq('campus_id', profile.campus_id)
+    .eq('status', 'active')
+    .eq('category', target.category)
+    .neq('id', listingId)
+    .order('created_at', { ascending: false });
+
+  if (error) return fail('UNKNOWN', 'Could not retrieve similar listings.');
+
+  return ok(
+    data.slice(0, 6).map((row) => {
+      const seller = Array.isArray(row.seller) ? row.seller[0] : row.seller;
+      const photos = [...row.listing_photos].sort((a, b) => a.position - b.position);
+
+      return {
+        listing: {
+          id: row.id,
+          campusId: row.campus_id,
+          sellerId: row.seller_id ?? 'dibs',
+          source: row.source,
+          title: row.title,
+          description: row.description,
+          priceCents: row.price_cents,
+          condition: row.condition,
+          category: row.category,
+          housingFit: row.housing_fit,
+          photos: photos.map((photo) => photo.photo_url),
+          status: row.status,
+          createdAt: row.created_at,
+        },
+        seller: seller
+          ? {
+              id: seller.id,
+              firstName: seller.first_name,
+              lastInitial: seller.last_initial,
+              verified: seller.verified,
+            }
+          : { id: 'dibs', firstName: 'Dibs', lastInitial: '', verified: false },
+        saved: row.saved_listings.length > 0,
+      };
+    }),
+  );
 }
