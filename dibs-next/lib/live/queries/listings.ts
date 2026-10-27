@@ -111,8 +111,80 @@ export async function searchListings(params: ListingSearch): Promise<Result<Page
 }
 
 export async function getListing(listingId: string): Promise<Result<ListingDetail>> {
-  // STUB(listings): replace with real implementation
-  return notImplemented('getListing', 'lib/live/queries/listings.ts');
+  const supabase = await createSupabaseServerClient();
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError || !authData.user) {
+    return fail('NOT_SIGNED_IN', 'Sign in to view listings.');
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from('users')
+    .select('campus_id')
+    .eq('id', authData.user.id)
+    .maybeSingle();
+
+  if (profileError) return fail('UNKNOWN', 'Could not verify your campus.');
+  if (!profile) return fail('NOT_FOUND', 'User profile not found.');
+
+  const { data: listing, error: listingError } = await supabase
+    .from('listings')
+    .select(
+      'id, campus_id, seller_id, source, title, description, price_cents, condition, category, housing_fit, status, created_at, listing_photos(photo_url, position), saved_listings(listing_id)',
+    )
+    .eq('campus_id', profile.campus_id)
+    .eq('status', 'active')
+    .eq('id', listingId)
+    .maybeSingle();
+
+  if (listingError) return fail('UNKNOWN', 'Could not retrieve this listing.');
+  if (!listing) return fail('NOT_FOUND', 'Listing not found.');
+  if (!listing.seller_id) return fail('NOT_FOUND', 'Seller profile not found.');
+
+  const { data: seller, error: sellerError } = await supabase
+    .from('users')
+    .select(
+      'id, campus_id, first_name, last_initial, email, housing_type, role, verified, trades_count, member_since, referral_code',
+    )
+    .eq('id', listing.seller_id)
+    .maybeSingle();
+
+  if (sellerError) return fail('UNKNOWN', 'Could not retrieve the seller profile.');
+  if (!seller) return fail('NOT_FOUND', 'Seller profile not found.');
+
+  const photos = [...listing.listing_photos].sort((a, b) => a.position - b.position);
+
+  return ok({
+    listing: {
+      id: listing.id,
+      campusId: listing.campus_id,
+      sellerId: listing.seller_id,
+      source: listing.source,
+      title: listing.title,
+      description: listing.description,
+      priceCents: listing.price_cents,
+      condition: listing.condition,
+      category: listing.category,
+      housingFit: listing.housing_fit,
+      photos: photos.map((photo) => photo.photo_url),
+      status: listing.status,
+      createdAt: listing.created_at,
+    },
+    seller: {
+      id: seller.id,
+      campusId: seller.campus_id,
+      firstName: seller.first_name,
+      lastInitial: seller.last_initial,
+      email: seller.email,
+      housingType: seller.housing_type,
+      role: seller.role,
+      verified: seller.verified,
+      tradesCount: seller.trades_count,
+      memberSince: seller.member_since,
+      referralCode: seller.referral_code,
+    },
+    saved: listing.saved_listings.length > 0,
+    isOwn: listing.seller_id === authData.user.id,
+  });
 }
 
 export async function getMyListings(): Promise<Result<ListingCardView[]>> {
