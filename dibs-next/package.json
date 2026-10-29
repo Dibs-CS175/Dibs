@@ -11,7 +11,6 @@
     "test": "vitest run --passWithNoTests",
     "format": "prettier --write .",
     "stubs": "node scripts/count-stubs.mjs",
-    "test": "vitest run",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "supabase:db:reset": "supabase db reset",
@@ -51,6 +50,6 @@
     "tailwindcss": "^3.4.15",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.6.3",
-    "vitest": "^5.0.3"
+    "vitest": "^2.1.4"
   }
 }
