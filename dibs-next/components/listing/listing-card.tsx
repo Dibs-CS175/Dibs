@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { BadgeCheck, Heart } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { ListingPhoto } from './listing-photo';
-import { ConditionBadge, HousingFitBadge, SourceBadge } from './badges';
+import { ConditionBadge, HousingFitBadge, SourceBadge, VerifiedBadge } from './badges';
 import { formatMoney, shortName, timeAgo } from '@/lib/format';
 import type { ListingCardView } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -37,9 +37,7 @@ export function ListingCard({
         <h3 className="line-clamp-2 px-0.5 font-sans text-sm font-semibold leading-snug">{l.title}</h3>
         <span className="flex min-w-0 items-center gap-1 px-0.5 text-xs text-muted">
           <span className="truncate">{shortName(seller)}</span>
-          {seller.verified ? (
-            <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-success" aria-label="Verified student" />
-          ) : null}
+          <VerifiedBadge verified={seller.verified} size="sm" />
         </span>
       </Link>
       <div className="flex flex-wrap gap-1 px-0.5">

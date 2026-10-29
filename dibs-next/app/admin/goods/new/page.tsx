@@ -1,9 +1,9 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { CheckCircle2, ChevronLeft, ImagePlus } from 'lucide-react';
+import { CheckCircle2, ChevronLeft } from 'lucide-react';
+import { PhotoUpload } from '@/components/photos/photo-upload';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { Field, FormError } from '@/components/ui/field';
@@ -30,6 +30,7 @@ export default function GoodsIntakePage() {
   const [serial, setSerial] = useState('');
   const [touched, setTouched] = useState(false);
   const [saved, setSaved] = useState<GoodsItem | null>(null);
+  const [uploading, setUploading] = useState(0);
   const intake = useAction(intakeGoods);
 
   const priceBad = price !== '' && !MONEY_RE.test(price);
@@ -100,7 +101,7 @@ export default function GoodsIntakePage() {
         onSubmit={async (e) => {
           e.preventDefault();
           setTouched(true);
-          if (!valid) return;
+          if (!valid || uploading > 0) return;
           const r = await intake.run({
             title,
             category,
@@ -136,30 +137,10 @@ export default function GoodsIntakePage() {
             ))}
           </NativeSelect>
         </Field>
-        <div className="flex flex-col gap-2">
-          <span className="text-sm font-semibold">Photos</span>
-          <div className="flex flex-wrap items-center gap-2">
-            {photos.map((p, i) => (
-              <img key={p} src={p} alt={`Photo ${i + 1}`} className="h-20 w-20 rounded-input object-cover" />
-            ))}
-            <label className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-input border border-line bg-surface px-4 text-sm font-semibold hover:bg-sunk has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-navel">
-              <ImagePlus className="h-4 w-4" aria-hidden /> Add photos
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                className="sr-only"
-                onChange={(e) => {
-                  setPhotos([
-                    ...photos,
-                    ...Array.from(e.target.files ?? []).map((f) => URL.createObjectURL(f)),
-                  ]);
-                  e.target.value = '';
-                }}
-              />
-            </label>
-          </div>
-        </div>
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-1 text-sm font-semibold">Photos</legend>
+          <PhotoUpload photos={photos} onChange={setPhotos} onPendingChange={setUploading} />
+        </fieldset>
         <div className="grid gap-4 md:grid-cols-2">
           <Field
             id="g-price"
@@ -208,8 +189,8 @@ export default function GoodsIntakePage() {
               : null
           }
         />
-        <Button type="submit" className="w-fit" disabled={intake.pending}>
-          {intake.pending ? 'Saving…' : 'Record intake'}
+        <Button type="submit" className="w-fit" disabled={intake.pending || uploading > 0}>
+          {intake.pending ? 'Saving…' : uploading ? 'Uploading photos…' : 'Record intake'}
         </Button>
       </form>
     </>

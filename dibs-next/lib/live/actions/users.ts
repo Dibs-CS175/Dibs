@@ -5,8 +5,8 @@
 // Keep every signature as it is; lib/actions/users.ts checks it against the demo version.
 // Replace a stub's body with real code and delete its STUB line; `npm run stubs` counts what is left.
 
-import { notImplemented } from '@/lib/live/not-implemented';
 import { fail, ok, type Result } from '@/lib/result';
+import { isHousingType, toSettings } from '@/lib/live/user-row';
 import type { HousingType, Session, Settings } from '@/lib/types';
 import { RESEND_SECONDS } from '@/lib/config/app';
 import { campuses } from '@/lib/fixtures/campuses';
@@ -157,17 +157,42 @@ export async function verifyCode(email: string, code: string): Promise<Result<Se
   });
 }
 
+/** Saves settings for the signed-in user. Errors: NOT_SIGNED_IN, VALIDATION. */
+async function saveSettings(patch: {
+  dibs_gesture?: string;
+  housing_type?: string | null;
+}): Promise<Result<Settings>> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) return fail('NOT_SIGNED_IN', 'Sign in to change your settings.');
+
+  const { data: row, error: rowError } = await supabase
+    .from('users')
+    .update(patch)
+    .eq('id', data.user.id)
+    .select('dibs_gesture, housing_type')
+    .maybeSingle();
+
+  if (rowError) return fail('UNKNOWN', `Could not save your settings: ${rowError.message}`);
+  if (!row) return fail('NOT_FOUND', 'User profile not found.');
+  return ok(toSettings(row));
+}
+
 export async function setHousingType(housingType: HousingType): Promise<Result<Settings>> {
-  // STUB(users): replace with real implementation
-  return notImplemented('setHousingType', 'lib/live/actions/users.ts');
+  if (!isHousingType(housingType)) return fail('VALIDATION', 'Pick where you live.');
+  return saveSettings({ housing_type: housingType });
 }
 
 export async function updateSettings(settings: Settings): Promise<Result<Settings>> {
-  // STUB(users): replace with real implementation
-  return notImplemented('updateSettings', 'lib/live/actions/users.ts');
+  const gestureOk = settings?.dibsGesture === 'hold' || settings?.dibsGesture === 'tap';
+  const housingOk = settings?.housingType === null || isHousingType(settings?.housingType);
+  if (!gestureOk || !housingOk) return fail('VALIDATION', 'Check your settings and try again.');
+  return saveSettings({ dibs_gesture: settings.dibsGesture, housing_type: settings.housingType });
 }
 
 export async function signOut(): Promise<Result<null>> {
-  // STUB(users): replace with real implementation
-  return notImplemented('signOut', 'lib/live/actions/users.ts');
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.signOut();
+  if (error) return fail('UNKNOWN', `Could not sign out: ${error.message}`);
+  return ok(null);
 }
