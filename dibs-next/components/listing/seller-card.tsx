@@ -1,6 +1,6 @@
 'use client';
 
-import { BadgeCheck } from 'lucide-react';
+import { VerifiedBadge } from '@/components/listing/badges';
 import { useTimeZone } from '@/lib/campus';
 import { formatDate, shortName } from '@/lib/format';
 import type { ListingSource, User } from '@/lib/types';
@@ -21,10 +21,7 @@ export function SellerCard({ seller, source }: { seller: User; source: ListingSo
         </span>
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-1 font-semibold">
-            {shortName(seller)}{' '}
-            {seller.verified ? (
-              <BadgeCheck className="h-4 w-4 text-success" aria-label="Verified student" />
-            ) : null}
+            {shortName(seller)} <VerifiedBadge verified={seller.verified} />
           </p>
           <p className="text-sm text-muted">
             {source === 'goods'
