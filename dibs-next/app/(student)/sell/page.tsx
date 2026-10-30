@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { ChevronLeft, ChevronRight, Save } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { ListingPreview } from '@/components/sell/listing-preview';
-import { PhotoOrderer } from '@/components/sell/photo-orderer';
+import { PhotoUpload } from '@/components/photos/photo-upload';
 import { ProhibitedNotice } from '@/components/sell/prohibited-notice';
 import { Button } from '@/components/ui/button';
 import { Field, FormError } from '@/components/ui/field';
@@ -57,6 +57,7 @@ export default function SellPage() {
   const [dollars, setDollars] = useState('');
   const [free, setFree] = useState(false);
   const [touched, setTouched] = useState(false);
+  const [uploading, setUploading] = useState(0);
   const save = useAction(saveListingDraft);
   const publish = useAction(publishListing);
 
@@ -78,7 +79,7 @@ export default function SellPage() {
 
   // Client checks only: required fields and formats. Everything else is the backend's call.
   const stepValid = [
-    draft.photos.length > 0,
+    draft.photos.length > 0 && uploading === 0,
     draft.title.trim() !== '' &&
       draft.category !== '' &&
       draft.condition !== '' &&
@@ -119,7 +120,7 @@ export default function SellPage() {
       <PageHeader
         title="Sell an item"
         actions={
-          <Button variant="secondary" disabled={save.pending} onClick={saveDraft}>
+          <Button variant="secondary" disabled={save.pending || uploading > 0} onClick={saveDraft}>
             <Save className="h-4 w-4" aria-hidden /> {save.pending ? 'Saving…' : 'Save draft'}
           </Button>
         }
@@ -150,10 +151,14 @@ export default function SellPage() {
 
         {step === 0 ? (
           <>
-            <PhotoOrderer photos={draft.photos} onChange={(photos) => set({ photos })} />
-            {err(!stepValid[0], 'Add at least one photo.') ? (
+            <PhotoUpload
+              photos={draft.photos}
+              onChange={(photos) => set({ photos })}
+              onPendingChange={setUploading}
+            />
+            {err(!stepValid[0], 'x') ? (
               <p role="alert" className="text-sm text-error">
-                Add at least one photo.
+                {uploading ? 'Wait for your photos to finish uploading.' : 'Add at least one photo.'}
               </p>
             ) : null}
           </>
