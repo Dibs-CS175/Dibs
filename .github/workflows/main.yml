@@ -2,8 +2,6 @@ name: PR Quality Checks
 
 on:
   pull_request:
-    branches:
-      - main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
@@ -20,14 +18,14 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: 'npm'
-          cache-dependency-path: |
-            package-lock.json
-            dibs-next/package-lock.json
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci --ignore-scripts
+          cd dibs-next && rm -rf node_modules package-lock.json && npm install
 
       - name: Run ESLint
         run: npm run lint
@@ -42,14 +40,14 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: 'npm'
-          cache-dependency-path: |
-            package-lock.json
-            dibs-next/package-lock.json
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci --ignore-scripts
+          cd dibs-next && rm -rf node_modules package-lock.json && npm install
 
       - name: Run TypeScript Typecheck
         run: npm run typecheck
@@ -64,14 +62,14 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: 'npm'
-          cache-dependency-path: |
-            package-lock.json
-            dibs-next/package-lock.json
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci --ignore-scripts
+          cd dibs-next && rm -rf node_modules package-lock.json && npm install
 
       - name: Run Vitest Suite
         run: npm test
@@ -86,14 +84,14 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: 'npm'
-          cache-dependency-path: |
-            package-lock.json
-            dibs-next/package-lock.json
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci --ignore-scripts
+          cd dibs-next && rm -rf node_modules package-lock.json && npm install
 
       - name: Run Stubs Script
         run: npm run stubs
