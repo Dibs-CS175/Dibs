@@ -1,0 +1,105 @@
+-- Listing fixture data corresponding to dibs-next/lib/fixtures/listings.ts.
+-- Seller emails resolve to the UUIDs created by 003_users.sql.
+with fixture (
+  listing_number,
+  seller_email,
+  source,
+  title,
+  description,
+  price_cents,
+  condition,
+  category,
+  housing_fit,
+  status,
+  hours_ago
+) as (
+  values
+    (1, 'maya.r@ucr.edu', 'student', 'LED desk lamp', 'Warm and cool modes, USB port in the base. LED only.', 800, 'like_new', 'dorm_essentials', 'dorm', 'claimed', 0.1),
+    (2, 'aaliyah.t@ucr.edu', 'student', 'Clip fan', 'Clips to a bed frame or desk. Two speeds, quiet on low.', 1000, 'good', 'dorm_essentials', 'dorm', 'active', 0.4),
+    (3, 'hana.k@ucr.edu', 'student', 'Storage bins, set of 4', 'Stackable clear bins with lids. Fit under a lofted bed.', 1200, 'good', 'dorm_essentials', 'dorm', 'active', 1.6),
+    (4, 'maya.r@ucr.edu', 'student', 'Full-length mirror', 'Over-the-door hooks, so no wall holes.', 1500, 'like_new', 'dorm_essentials', 'dorm', 'active', 3),
+    (5, 'aaliyah.t@ucr.edu', 'student', 'Shower caddy', 'Mesh caddy with a handle. Cleaned and dried.', 500, 'good', 'dorm_essentials', 'dorm', 'active', 5),
+    (6, 'imani.b@csusb.edu', 'student', 'Battery string lights', 'LED, battery pack, 20 ft. Free to whoever picks up first.', 0, 'good', 'dorm_essentials', 'dorm', 'active', 24),
+    (7, 'priya.s@ucr.edu', 'student', 'TI-84 Plus calculator', 'New batteries. Works for most math and chemistry exams.', 5500, 'good', 'electronics', 'dorm', 'active', 0.2),
+    (8, 'ravi.n@csusb.edu', 'student', '24 in monitor, 1080p', 'HDMI and USB-C cables included. No dead pixels.', 7000, 'like_new', 'electronics', 'dorm', 'active', 0.8),
+    (9, 'priya.s@ucr.edu', 'student', 'Mechanical keyboard', 'Tactile switches, full size.', 3500, 'like_new', 'electronics', 'dorm', 'active', 4),
+    (10, 'kenji.w@ucr.edu', 'student', 'Wireless printer', 'Prints from your phone. Half-full ink included.', 4000, 'good', 'electronics', 'dorm', 'active', 12),
+    (11, 'ravi.n@csusb.edu', 'student', 'Noise-canceling headphones', 'Over-ear, case included.', 6000, 'good', 'electronics', 'dorm', 'active', 0.6),
+    (12, 'jon.p@ucr.edu', 'student', 'Writing desk, 47 in', 'One drawer. You pick up; it needs a car.', 4000, 'good', 'furniture', 'apartment', 'active', 0.3),
+    (13, 'marcus.l@ucr.edu', 'student', 'Office chair', 'Adjustable height and arms. Mesh back.', 3500, 'good', 'furniture', 'apartment', 'active', 1.2),
+    (14, 'diego.m@ucr.edu', 'student', '5-shelf bookcase', 'A few scuffs. Disassembles with one screwdriver.', 2500, 'fair', 'furniture', 'apartment', 'active', 24),
+    (15, 'diego.m@ucr.edu', 'student', 'Futon with cover', 'Folds flat. Needs two people to move.', 9000, 'good', 'furniture', 'apartment', 'active', 48),
+    (16, 'marcus.l@ucr.edu', 'student', '2-seat sofa', 'Gray fabric. Fits through a standard door.', 12000, 'good', 'furniture', 'apartment', 'active', 10),
+    (17, 'tomas.v@csusb.edu', 'student', 'Nightstand', 'One drawer, one shelf.', 2000, 'like_new', 'furniture', 'apartment', 'active', 3.3),
+    (18, 'kenji.w@ucr.edu', 'student', 'Air fryer, 4 qt', 'Used about ten times.', 3000, 'like_new', 'kitchen', 'apartment', 'active', 0.5),
+    (19, 'tomas.v@csusb.edu', 'student', 'Rice cooker, 6 cup', 'Keeps warm for hours.', 1800, 'good', 'kitchen', 'apartment', 'active', 2.5),
+    (20, 'sofia.g@ucr.edu', 'student', 'Dish rack', 'Two-tier with utensil cup. Free.', 0, 'good', 'kitchen', 'apartment', 'active', 15),
+    (21, 'tomas.v@csusb.edu', 'student', '2-slice toaster', 'Wide slots. For off-campus kitchens only.', 800, 'good', 'kitchen', 'not_allowed', 'active', 24),
+    (22, 'hana.k@ucr.edu', 'student', 'General Chemistry, 11th ed.', 'Light highlighting in chapters 1 to 4.', 6000, 'good', 'textbooks', 'dorm', 'active', 0.1),
+    (23, 'priya.s@ucr.edu', 'student', 'Calculus: Early Transcendentals', 'No writing inside.', 4500, 'good', 'textbooks', 'dorm', 'active', 0.9),
+    (24, 'maya.r@ucr.edu', 'student', 'Intro Biology lab manual', 'Unused pages, binder-ready.', 2000, 'like_new', 'textbooks', 'dorm', 'active', 1.8),
+    (25, 'jon.p@ucr.edu', 'student', 'Road bike, 54 cm', 'Aluminum frame, 18 speeds, new tubes.', 12000, 'good', 'bikes_boards', 'dorm', 'active', 0.3),
+    (26, 'marcus.l@ucr.edu', 'student', 'Beach cruiser', 'Single speed, front basket.', 8000, 'good', 'bikes_boards', 'dorm', 'sold', 4.3),
+    (27, 'jon.p@ucr.edu', 'student', 'U-lock with cable', 'Two keys. Mount bracket included.', 1000, 'like_new', 'bikes_boards', 'dorm', 'active', 0.3),
+    (28, 'imani.b@csusb.edu', 'student', 'Rain jacket, M', 'Packable, hood included.', 1800, 'like_new', 'clothing', 'dorm', 'active', 1.4),
+    (29, 'alex.d@ucr.edu', 'student', 'TI-83 Plus calculator', 'Fresh batteries. Fine for MATH courses.', 4000, 'good', 'electronics', 'dorm', 'claimed', 5),
+    (30, 'alex.d@ucr.edu', 'student', 'Bamboo desk shelf', 'Sits on a desk and doubles the surface.', 1800, 'like_new', 'dorm_essentials', 'dorm', 'active', 24),
+    (31, 'goods.riverside@dibs.example', 'goods', 'Mesh task chair', 'Checked and cleaned by Dibs. From a move-out pickup.', 1500, 'good', 'furniture', 'apartment', 'active', 2),
+    (32, 'goods.riverside@dibs.example', 'goods', 'Desk fan, 3 speed', 'Tested and wiped down.', 600, 'good', 'dorm_essentials', 'dorm', 'active', 6),
+    (33, 'goods.riverside@dibs.example', 'goods', 'Storage bins, set of 3', 'Stackable, lids included.', 400, 'good', 'dorm_essentials', 'dorm', 'active', 9),
+    (34, 'goods.riverside@dibs.example', 'goods', '22 in monitor', 'HDMI cable included. Tested.', 2500, 'good', 'electronics', 'dorm', 'active', 20),
+    (35, 'goods.riverside@dibs.example', 'goods', 'Bookcase, 3 shelf', 'Some wear on the corners.', 1200, 'fair', 'furniture', 'apartment', 'active', 30),
+    (36, 'goods.riverside@dibs.example', 'goods', 'Microwave, 0.9 cu ft', 'Cleaned and tested. Halls already include one.', 1500, 'good', 'kitchen', 'apartment', 'active', 33),
+    (37, 'goods.riverside@dibs.example', 'goods', 'Space heater', 'Tip-over shutoff. Off-campus only.', 1000, 'good', 'other', 'not_allowed', 'active', 40),
+    (38, 'goods.riverside@dibs.example', 'goods', 'Desk lamp with USB', 'LED bulb included.', 500, 'good', 'dorm_essentials', 'dorm', 'active', 50),
+    (39, 'goods.san-bernardino@dibs.example', 'goods', 'Cruiser bike', 'Tuned up, new chain. Rust on the fenders.', 6000, 'fair', 'bikes_boards', 'dorm', 'active', 70),
+    (40, 'goods.san-bernardino@dibs.example', 'goods', 'Cookware set, 6 piece', 'Two pans, two pots, two lids.', 1400, 'good', 'kitchen', 'apartment', 'removed', 72)
+)
+insert into public.listings (
+  id,
+  campus_id,
+  seller_id,
+  source,
+  seller_type,
+  title,
+  description,
+  price_cents,
+  condition,
+  category,
+  housing_fit,
+  status,
+  created_at
+)
+select
+  ('10000000-0000-4000-8000-' || lpad(fixture.listing_number::text, 12, '0'))::uuid,
+  seller.campus_id,
+  seller.id,
+  fixture.source::public.listing_source,
+  case fixture.source
+    when 'goods' then 'dibs'::public.listing_seller_type
+    else 'student'::public.listing_seller_type
+  end,
+  fixture.title,
+  fixture.description,
+  fixture.price_cents,
+  fixture.condition::public.listing_condition,
+  fixture.category::public.listing_category,
+  fixture.housing_fit::public.listing_housing_fit,
+  fixture.status::public.listing_status,
+  timestamptz '2026-10-08 19:00:00+00' - (fixture.hours_ago::double precision * interval '1 hour')
+from fixture
+join public.users seller on seller.email = fixture.seller_email
+on conflict (id) do update
+set campus_id = excluded.campus_id,
+    seller_id = excluded.seller_id,
+    source = excluded.source,
+    seller_type = excluded.seller_type,
+    title = excluded.title,
+    description = excluded.description,
+    price_cents = excluded.price_cents,
+    condition = excluded.condition,
+    category = excluded.category,
+    housing_fit = excluded.housing_fit,
+    status = excluded.status,
+    created_at = excluded.created_at,
+    updated_at = now();
