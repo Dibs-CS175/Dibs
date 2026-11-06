@@ -1,5 +1,5 @@
--- Seeds fixture Auth accounts and profiles. Admin accounts are for development/testing only.
--- Goods accounts use unique .example addresses because the fixture helper gives both the same email.
+--- Seeds in fixture user data from fixtures
+--- Fixes the auth.users table and the public.users table to match the fixture data.
 do $$
 begin
   insert into auth.users (
@@ -14,7 +14,7 @@ begin
     updated_at
   )
   select
-    fixture.id,
+    gen_random_uuid(),
     'authenticated',
     'authenticated',
     fixture.email,
@@ -25,28 +25,27 @@ begin
     now()
   from (
     values
-      ('00000000-0000-4000-8000-000000000001'::uuid, 'alex.d@ucr.edu', 'Alex', 'D', '2025-09-20T17:00:00Z'::timestamptz),
-      ('00000000-0000-4000-8000-000000000002'::uuid, 'jordan.k@ucr.edu', 'Jordan', 'K', '2025-08-01T17:00:00Z'::timestamptz),
-      ('00000000-0000-4000-8000-000000000003'::uuid, 'goods.riverside@dibs.example', 'Dibs Goods', '', '2025-08-01T17:00:00Z'::timestamptz),
-      ('00000000-0000-4000-8000-000000000004'::uuid, 'goods.san-bernardino@dibs.example', 'Dibs Goods', '', '2026-08-01T17:00:00Z'::timestamptz),
-      ('00000000-0000-4000-8000-000000000005'::uuid, 'maya.r@ucr.edu', 'Maya', 'R', '2025-09-15T17:00:00Z'::timestamptz),
-      ('00000000-0000-4000-8000-000000000006'::uuid, 'jon.p@ucr.edu', 'Jon', 'P', '2025-09-15T17:00:00Z'::timestamptz),
-      ('00000000-0000-4000-8000-000000000007'::uuid, 'priya.s@ucr.edu', 'Priya', 'S', '2025-09-22T17:00:00Z'::timestamptz),
-      ('00000000-0000-4000-8000-000000000008'::uuid, 'diego.m@ucr.edu', 'Diego', 'M', '2026-01-10T17:00:00Z'::timestamptz),
-      ('00000000-0000-4000-8000-000000000009'::uuid, 'aaliyah.t@ucr.edu', 'Aaliyah', 'T', '2025-09-29T17:00:00Z'::timestamptz),
-      ('00000000-0000-4000-8000-000000000010'::uuid, 'kenji.w@ucr.edu', 'Kenji', 'W', '2026-03-30T17:00:00Z'::timestamptz),
-      ('00000000-0000-4000-8000-000000000011'::uuid, 'sofia.g@ucr.edu', 'Sofia', 'G', '2026-04-02T17:00:00Z'::timestamptz),
-      ('00000000-0000-4000-8000-000000000012'::uuid, 'marcus.l@ucr.edu', 'Marcus', 'L', '2025-09-15T17:00:00Z'::timestamptz),
-      ('00000000-0000-4000-8000-000000000013'::uuid, 'hana.k@ucr.edu', 'Hana', 'K', '2026-01-12T17:00:00Z'::timestamptz),
-      ('00000000-0000-4000-8000-000000000014'::uuid, 'tomas.v@csusb.edu', 'Tomás', 'V', '2025-09-18T17:00:00Z'::timestamptz),
-      ('00000000-0000-4000-8000-000000000015'::uuid, 'imani.b@csusb.edu', 'Imani', 'B', '2025-09-25T17:00:00Z'::timestamptz),
-      ('00000000-0000-4000-8000-000000000016'::uuid, 'ravi.n@csusb.edu', 'Ravi', 'N', '2026-01-08T17:00:00Z'::timestamptz)
-  ) as fixture (id, email, first_name, last_initial, member_since)
+      ('alex.d@ucr.edu', 'Alex', 'D', '2025-09-20T17:00:00Z'::timestamptz),
+      ('jordan.k@ucr.edu', 'Jordan', 'K', '2025-08-01T17:00:00Z'::timestamptz),
+      ('goods.riverside@dibs.example', 'Dibs Goods', '', '2025-08-01T17:00:00Z'::timestamptz),
+      ('goods.san-bernardino@dibs.example', 'Dibs Goods', '', '2026-08-01T17:00:00Z'::timestamptz),
+      ('maya.r@ucr.edu', 'Maya', 'R', '2025-09-15T17:00:00Z'::timestamptz),
+      ('jon.p@ucr.edu', 'Jon', 'P', '2025-09-15T17:00:00Z'::timestamptz),
+      ('priya.s@ucr.edu', 'Priya', 'S', '2025-09-22T17:00:00Z'::timestamptz),
+      ('diego.m@ucr.edu', 'Diego', 'M', '2026-01-10T17:00:00Z'::timestamptz),
+      ('aaliyah.t@ucr.edu', 'Aaliyah', 'T', '2025-09-29T17:00:00Z'::timestamptz),
+      ('kenji.w@ucr.edu', 'Kenji', 'W', '2026-03-30T17:00:00Z'::timestamptz),
+      ('sofia.g@ucr.edu', 'Sofia', 'G', '2026-04-02T17:00:00Z'::timestamptz),
+      ('marcus.l@ucr.edu', 'Marcus', 'L', '2025-09-15T17:00:00Z'::timestamptz),
+      ('hana.k@ucr.edu', 'Hana', 'K', '2026-01-12T17:00:00Z'::timestamptz),
+      ('tomas.v@csusb.edu', 'Tomás', 'V', '2025-09-18T17:00:00Z'::timestamptz),
+      ('imani.b@csusb.edu', 'Imani', 'B', '2025-09-25T17:00:00Z'::timestamptz),
+      ('ravi.n@csusb.edu', 'Ravi', 'N', '2026-01-08T17:00:00Z'::timestamptz)
+  ) as fixture (email, first_name, last_initial, member_since)
   where not exists (
     select 1 from auth.users existing
     where lower(existing.email) = fixture.email
-  )
-  on conflict (id) do nothing;
+  );
   with fixture_users (
     email, campus_id, first_name, last_initial, housing_type, role,
     verified, trades_count, member_since, referral_code

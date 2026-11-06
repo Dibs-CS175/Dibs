@@ -1,5 +1,5 @@
 -- Creates the campus directory used to map student email domains to campus IDs.
-create extension if not exists "citext";
+
 create table if not exists public.campuses(
 id text not null primary key,
 name text not null,

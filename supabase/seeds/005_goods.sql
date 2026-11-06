@@ -41,8 +41,26 @@ begin
     (24, 'riverside', 'Broken desk lamp', 'dorm_essentials', 0, 0, null, null, 'disposed', '2026-08-27T17:00:00Z'::timestamptz),
     (25, 'riverside', 'Cracked monitor', 'electronics', 0, 0, null, null, 'disposed', '2026-08-29T17:00:00Z'::timestamptz);
 
+  update public.listings listing
+  set campus_id = fixture.campus_id,
+      title = fixture.title,
+      description = '',
+      price_cents = fixture.price_cents,
+      condition = 'good',
+      category = fixture.category::public.listing_category,
+      housing_fit = 'dorm',
+      status = case fixture.status
+        when 'listed' then 'active'::public.listing_status
+        when 'sold' then 'sold'::public.listing_status
+        else 'removed'::public.listing_status
+      end,
+      updated_at = now()
+  from pg_temp.goods_seed_fixture fixture
+  where listing.source = 'goods'
+    and listing.campus_id = fixture.campus_id
+    and listing.title = fixture.title;
+
   insert into public.listings (
-    id,
     campus_id,
     seller_id,
     source,
@@ -56,7 +74,6 @@ begin
     status
   )
   select
-    ('20000000-0000-4000-8000-' || lpad(fixture.item_number::text, 12, '0'))::uuid,
     fixture.campus_id,
     null,
     'goods',
@@ -79,17 +96,24 @@ begin
     where existing.source = 'goods'
       and existing.campus_id = fixture.campus_id
       and existing.title = fixture.title
-  )
-  on conflict (id) do update
-  set campus_id = excluded.campus_id,
-      title = excluded.title,
-      price_cents = excluded.price_cents,
-      category = excluded.category,
-      status = excluded.status,
-      updated_at = now();
+  );
+
+  update public.goods_items item
+  set campus_id = fixture.campus_id,
+      cost_cents = fixture.cost_cents,
+      serial_number = fixture.serial_number,
+      hold_until = fixture.hold_until,
+      status = fixture.status::public.goods_status,
+      intake_date = fixture.intake_date,
+      updated_at = now()
+  from pg_temp.goods_seed_fixture fixture
+  join public.listings listing
+    on listing.source = 'goods'
+    and listing.campus_id = fixture.campus_id
+    and listing.title = fixture.title
+  where item.listing_id = listing.id;
 
   insert into public.goods_items (
-    id,
     campus_id,
     listing_id,
     cost_cents,
@@ -99,7 +123,6 @@ begin
     intake_date
   )
   select
-    ('30000000-0000-4000-8000-' || lpad(fixture.item_number::text, 12, '0'))::uuid,
     fixture.campus_id,
     listing.id,
     fixture.cost_cents,
@@ -112,14 +135,10 @@ begin
     on listing.source = 'goods'
     and listing.campus_id = fixture.campus_id
     and listing.title = fixture.title
-  on conflict (id) do update
-  set campus_id = excluded.campus_id,
-      listing_id = excluded.listing_id,
-      cost_cents = excluded.cost_cents,
-      serial_number = excluded.serial_number,
-      hold_until = excluded.hold_until,
-      status = excluded.status,
-      intake_date = excluded.intake_date,
-      updated_at = now();
+  where not exists (
+    select 1
+    from public.goods_items existing
+    where existing.listing_id = listing.id
+  );
 end;
 $$;

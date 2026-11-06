@@ -1,5 +1,6 @@
 -- Creates user profiles, auth-user synchronization, profile RLS, and updated-at behavior.
 create extension if not exists pgcrypto;
+create extension if not exists "citext";
 
 create type public.user_role as enum ('student', 'admin');
 create type public.user_housing_type as enum ('hall', 'campus_apartment', 'off_campus', 'commuter');
