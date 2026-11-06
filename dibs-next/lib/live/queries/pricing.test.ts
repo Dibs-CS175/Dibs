@@ -8,6 +8,23 @@ vi.mock('@/lib/live/queries/users', () => ({
   getSession: async () => session.current,
 }));
 
+// getCheckoutQuote reads the listing and the session through Supabase; tests swap in a fake client
+const db = vi.hoisted(() => ({
+  user: { id: 'u1' } as { id: string } | null,
+  listing: { campus_id: 'riverside', price_cents: 2000 } as { campus_id: string; price_cents: number } | null,
+  error: null as { message: string } | null,
+}));
+vi.mock('@/lib/supabase/server', () => ({
+  createSupabaseServerClient: async () => ({
+    auth: { getUser: async () => ({ data: { user: db.user } }) },
+    from: () => ({
+      select: () => ({
+        eq: () => ({ maybeSingle: async () => ({ data: db.listing, error: db.error }) }),
+      }),
+    }),
+  }),
+}));
+
 import {
   getCheckoutQuote,
   getSellerPayoutQuote,
@@ -23,6 +40,9 @@ const errorCode = (r: Result<unknown>) => (r.ok ? null : r.error.code);
 afterEach(() => {
   vi.unstubAllEnvs();
   session.current = null;
+  db.user = { id: 'u1' };
+  db.listing = { campus_id: 'riverside', price_cents: 2000 };
+  db.error = null;
 });
 
 describe('price row by date', () => {
@@ -128,7 +148,38 @@ describe('getSummerHoldOffers', () => {
 });
 
 describe('getCheckoutQuote', () => {
-  it('stays a stub until the listings table exists', async () => {
-    expect(errorCode(await getCheckoutQuote('l1'))).toBe('NOT_IMPLEMENTED');
+  it('quotes a $20 item at $23.65 all in', async () => {
+    const r = await getCheckoutQuote('l1');
+    expect(r).toEqual({
+      ok: true,
+      data: {
+        lines: [
+          { label: 'Item', kind: 'item', cents: 2000 },
+          { label: 'Buyer fee', kind: 'fee', cents: 175 },
+          { label: 'Sales tax', kind: 'tax', cents: 190 },
+        ],
+        totalCents: 2365,
+      },
+    });
+  });
+
+  it('needs a signed-in buyer', async () => {
+    db.user = null;
+    expect(errorCode(await getCheckoutQuote('l1'))).toBe('NOT_SIGNED_IN');
+  });
+
+  it('returns NOT_FOUND for a listing the buyer cannot see', async () => {
+    db.listing = null;
+    expect(errorCode(await getCheckoutQuote('l1'))).toBe('NOT_FOUND');
+  });
+
+  it('returns UNKNOWN when the read fails', async () => {
+    db.listing = null;
+    db.error = { message: 'boom' };
+    expect(errorCode(await getCheckoutQuote('l1'))).toBe('UNKNOWN');
+  });
+
+  it('rejects an empty listing id', async () => {
+    expect(errorCode(await getCheckoutQuote(''))).toBe('VALIDATION');
   });
 });
