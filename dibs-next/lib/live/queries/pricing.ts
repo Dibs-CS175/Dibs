@@ -7,9 +7,9 @@
 
 import { now } from '@/lib/clock';
 import rawTables from '@/lib/fixtures/priceTable.json';
-import { notImplemented } from '@/lib/live/not-implemented';
 import { getSession } from '@/lib/live/queries/users';
 import {
+  checkoutLines,
   currentTier,
   PricingError,
   sellerPayout,
@@ -19,6 +19,7 @@ import {
   type PriceRow,
 } from '@/lib/pricing';
 import { fail, ok, type Result } from '@/lib/result';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type {
   AddOnKey,
   Quote,
@@ -57,8 +58,9 @@ function toFail(e: unknown): Result<never> {
 
 // lib/pricing lines carry a key; screens group quote lines by kind
 function kindOf(key: string): QuoteLineKind {
-  if (key === 'standard_items' || key === 'large_items') return 'item';
-  if (key === 'registration' || key === 'off_campus') return 'fee';
+  if (key === 'item' || key === 'standard_items' || key === 'large_items') return 'item';
+  if (key === 'registration' || key === 'off_campus' || key === 'buyer_fee') return 'fee';
+  if (key === 'tax') return 'tax';
   return 'addon';
 }
 
@@ -68,9 +70,28 @@ function toQuote(lines: Line[], totalCents: number): Quote {
 
 /** Item price, buyer fee, sales tax and the all-in total for Hold to Dibs. */
 export async function getCheckoutQuote(listingId: string): Promise<Result<Quote>> {
-  // Needs the listing's price and campus from Brian's listings table; checkoutLines in lib/pricing is ready
-  // STUB(pricing): replace with real implementation
-  return notImplemented('getCheckoutQuote', 'lib/live/queries/pricing.ts');
+  try {
+    if (typeof listingId !== 'string' || !listingId) return fail('VALIDATION', 'Pick a listing to check out.');
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return fail('NOT_SIGNED_IN', 'Sign in to see your total.');
+    // Row-level security limits this read to listings on the signed-in user's campus
+    const { data: listing, error } = await supabase
+      .from('listings')
+      .select('campus_id, price_cents')
+      .eq('id', listingId)
+      .maybeSingle();
+    if (error) return fail('UNKNOWN', 'Could not load this listing. Try again.');
+    if (!listing) return fail('NOT_FOUND', 'Listing not found.');
+    const row = priceRow(listing.campus_id, now());
+    if (!row) return fail('NOT_FOUND', NO_PRICES);
+    const quote = checkoutLines(listing.price_cents, row);
+    return ok(toQuote(quote.lines, quote.totalCents));
+  } catch (e) {
+    return toFail(e);
+  }
 }
 
 /** Asking price, seller fee and what the seller receives. */
