@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { use, useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { ChevronLeft, MessageCircle } from 'lucide-react';
@@ -27,20 +27,31 @@ interface Outgoing {
   key: string;
   body: string;
   at: string;
-  delivery: 'sending' | 'sent' | 'failed';
+  delivery: 'sending' | 'failed';
   /** Meetup proposals keep their spot and time so Retry can resend them. */
   meetup?: { spotId: string; time: string };
 }
 
-export default function ThreadPage({ params }: { params: { id: string } }) {
-  const { state, retry } = useQuery(() => getThread(params.id), [params.id]);
+/** How often the open thread checks for new messages and accepted meetups from the other device. */
+const POLL_MS = 4000;
+
+export default function ThreadPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  // Each refetch also marks the thread read, so messages seen here don't count as unread in the inbox.
+  const { state, retry } = useQuery(() => getThread(id), [id], { pollMs: POLL_MS });
   const campusId = state.status === 'data' ? state.data.campusId : null;
   const spots = useQuery(
     () => (campusId ? getMeetupSpots(campusId) : Promise.resolve(ok<MeetupSpot[]>([]))),
     [campusId],
   );
   const [outgoing, setOutgoing] = useState<Outgoing[]>([]);
+  /** Our own messages once sent, shown until the next refetch includes them. */
+  const [arrived, setArrived] = useState<Message[]>([]);
+  /** Ids of our messages sent from this screen, so they keep the "Sent" tick. */
+  const [sentIds, setSentIds] = useState<string[]>([]);
   const [accepted, setAccepted] = useState<string[]>([]);
+
+  const addArrived = (m: Message) => setArrived((a) => (a.some((x) => x.id === m.id) ? a : [...a, m]));
   const [meetupOpen, setMeetupOpen] = useState(false);
   const [acceptingKey, setAcceptingKey] = useState<string | null>(null);
 
@@ -48,15 +59,17 @@ export default function ThreadPage({ params }: { params: { id: string } }) {
   const deliver = async (m: Outgoing) => {
     setOutgoing((o) => o.map((x) => (x.key === m.key ? { ...x, delivery: 'sending' } : x)));
     const r = m.meetup
-      ? await proposeMeetup(params.id, m.meetup.spotId, m.meetup.time)
-      : await sendMessage(params.id, m.body);
-    setOutgoing((o) =>
-      o.map((x) =>
-        x.key === m.key
-          ? { ...x, delivery: r.ok ? 'sent' : 'failed', at: r.ok ? r.data.createdAt : x.at }
-          : x,
-      ),
-    );
+      ? await proposeMeetup(id, m.meetup.spotId, m.meetup.time)
+      : await sendMessage(id, m.body);
+    if (r.ok) {
+      // The saved message replaces the local copy; the next refetch returns the same id, which is skipped.
+      setSentIds((s) => [...s, r.data.id]);
+      addArrived(r.data);
+      setOutgoing((o) => o.filter((x) => x.key !== m.key));
+    } else {
+      setOutgoing((o) => o.map((x) => (x.key === m.key ? { ...x, delivery: 'failed' } : x)));
+      toast.error(errorMessage(r.error, { CONFLICT: 'This item sold, so the conversation is closed.' }));
+    }
   };
 
   const queue = (m: Omit<Outgoing, 'key' | 'at' | 'delivery'>) => {
@@ -102,6 +115,7 @@ export default function ThreadPage({ params }: { params: { id: string } }) {
     body: m.body,
     mine: m.senderId === t.viewerId,
     at: m.createdAt,
+    delivery: sentIds.includes(m.id) ? 'sent' : undefined,
     meetup:
       m.kind === 'meetup_proposal' && m.meetupTime
         ? {
@@ -111,8 +125,11 @@ export default function ThreadPage({ params }: { params: { id: string } }) {
           }
         : undefined,
   });
+  const saved = [...t.messages, ...arrived.filter((a) => !t.messages.some((m) => m.id === a.id))].sort(
+    (a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt) || a.id.localeCompare(b.id),
+  );
   const items: ShownMessage[] = [
-    ...t.messages.map(shown),
+    ...saved.map(shown),
     ...outgoing.map((m) => ({
       key: m.key,
       body: m.body,
