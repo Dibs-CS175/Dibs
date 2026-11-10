@@ -45,13 +45,13 @@ values
   (gen_random_uuid(), 'san-bernardino', 'pickup', '2027-06-08T16:00:00Z', '2027-06-08T18:00:00Z', 8, 2, now(), now()),
   (gen_random_uuid(), 'san-bernardino', 'pickup', '2027-06-09T16:00:00Z', '2027-06-09T18:00:00Z', 8, 8, now(), now())
 
-on conflict (id, campus_id) do update 
+on conflict (id) do update 
 set kind = excluded.kind,
     starts_at = excluded.starts_at,
     ends_at = excluded.ends_at,
     capacity = excluded.capacity,
     booked = excluded.booked,
-    updated_at = now()
+    updated_at = now();
 
 
 
