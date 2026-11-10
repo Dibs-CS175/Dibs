@@ -9,8 +9,9 @@ export function HousingFitBadge({ fit, showExplain = false }: { fit: HousingFit;
   const variant = fit === 'dorm' ? 'success' : fit === 'apartment' ? 'default' : 'warning';
   const Icon = fit === 'dorm' ? Leaf : fit === 'apartment' ? Building2 : TriangleAlert;
   return (
-    <span className="inline-flex flex-col gap-1">
-      <Badge variant={variant} title={meta.explain}>
+    <span className="inline-flex min-w-0 max-w-full flex-col gap-1">
+      {/* Wraps on narrow cards: "Not allowed in campus housing" is wider than a half-width card at 390 px. */}
+      <Badge variant={variant} title={meta.explain} className="max-w-full whitespace-normal">
         <Icon className="h-3 w-3" aria-hidden /> {meta.label}
       </Badge>
       {showExplain ? <span className="text-sm text-muted">{meta.explain}</span> : null}

@@ -52,7 +52,7 @@ export function SiteHeader({ user, campusName }: { user: UserT | null; campusNam
         Skip to content
       </a>
       <div className="container flex h-full max-w-content items-center gap-2">
-        <Link href="/" className="rounded-input" aria-label="Dibs home">
+        <Link href="/" className="inline-flex min-h-[44px] items-center rounded-input" aria-label="Dibs home">
           <Logo onDark size={24} />
         </Link>
         {campusName ? (
