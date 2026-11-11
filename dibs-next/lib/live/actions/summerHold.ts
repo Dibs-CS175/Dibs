@@ -5,17 +5,172 @@
 // Keep every signature as it is; lib/actions/summerHold.ts checks it against the demo version.
 // Replace a stub's body with real code and delete its STUB line; `npm run stubs` counts what is left.
 
+import { now } from '@/lib/clock';
+import rawTables from '@/lib/fixtures/priceTable.json';
 import { notImplemented } from '@/lib/live/not-implemented';
-import type { Result } from '@/lib/result';
+import { getSummerHoldQuote } from '@/lib/live/queries/pricing';
+import { currentTier, type PriceRow } from '@/lib/pricing';
+import { fail, ok, type Result } from '@/lib/result';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type { BookingDraftInput, MyBooking, ParentPayView, SummerHoldBooking } from '@/lib/types';
+
+const tables = rawTables as unknown as PriceRow[];
+
+function getCampusPriceRow(campusId: string, asOf: Date): PriceRow | null {
+  const t = asOf.getTime();
+  const rows = tables
+    .filter((r) => r.campusId === campusId)
+    .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
+  return (
+    rows.find((r) => Date.parse(r.startsAt) <= t && t <= Date.parse(r.endsAt)) ??
+    rows.find((r) => Date.parse(r.startsAt) > t) ??
+    rows.at(-1) ??
+    null
+  );
+}
 
 /**
  * Saves the choices as a draft booking and holds the packing appointment if Full Service is on.
  * Errors: VALIDATION, SLOT_FULL, DEADLINE_PASSED.
  */
 export async function createBooking(input: BookingDraftInput): Promise<Result<SummerHoldBooking>> {
-  // STUB(summerHold): replace with real implementation
-  return notImplemented('createBooking', 'lib/live/actions/summerHold.ts');
+const supabase = await createSupabaseServerClient();
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError || !authData.user) {
+    return fail('NOT_SIGNED_IN', 'Sign in to create a booking.');
+  }
+
+  if (!input.address || input.address.trim() === '') {
+    return fail('VALIDATION', 'Address is required.');
+  }
+
+  if (!input.housingType) {
+    return fail('VALIDATION', 'Housing type is required.');
+  }
+
+  if (input.standardCount < 0 || input.largeCount < 0) {
+    return fail('VALIDATION', 'Item counts must be whole numbers, 0 or more.');
+  }
+
+  if (input.standardCount + input.largeCount === 0) {
+    return fail('VALIDATION', 'Add at least one item.');
+  }
+
+  const asOf = now();
+  const row = getCampusPriceRow(input.campusId, asOf);
+  if (!row) {
+    return fail('NOT_FOUND', 'Prices not found for this campus.');
+  }
+
+  const tier = currentTier(row, asOf);
+  if (!tier) {
+    return fail('DEADLINE_PASSED', 'Summer Hold registration has closed.');
+  }
+
+  const quoteResult = await getSummerHoldQuote({
+    campusId: input.campusId,
+    housingType: input.housingType,
+    standardCount: input.standardCount,
+    largeCount: input.largeCount,
+    fullService: input.fullService,
+    addOnKeys: input.addOnKeys,
+    referralCode: input.referralCode,
+  });
+
+  if (!quoteResult.ok) {
+    return quoteResult;
+  }
+
+  if (input.fullService && input.packingSlotId) {
+    const { data: slot, error: slotError } = await supabase
+      .from('slots')
+      .select('id, capacity, booked, campus_id, kind')
+      .eq('id', input.packingSlotId)
+      .eq('campus_id', input.campusId)
+      .eq('kind', 'packing')
+      .maybeSingle();
+
+    if (slotError || !slot) {
+      return fail('NOT_FOUND', 'Packing slot not found.');
+    }
+
+    if (slot.booked >= slot.capacity) {
+      return fail('SLOT_FULL', 'This packing slot is full.');
+    }
+  }
+
+  const { data: bookingRow, error: insertError } = await supabase
+    .from('summer_hold_bookings')
+    .insert({
+      campus_id: input.campusId,
+      user_id: authData.user.id,
+      status: 'draft',
+      housing_type: input.housingType,
+      address: input.address.trim(),
+      standard_count: input.standardCount,
+      large_count: input.largeCount,
+      registration_tier_key: tier.key,
+      full_service: input.fullService,
+      packing_slot_id: input.packingSlotId || null,
+      referral_code: input.referralCode || null,
+      quote: quoteResult.data,
+      balance_due_at: row.balanceDueDate,
+    })
+    .select()
+    .single();
+
+  if (insertError || !bookingRow) {
+    return fail('UNKNOWN', 'Could not create booking.');
+  }
+
+  if (input.addOnKeys && input.addOnKeys.length > 0) {
+    const addOnRows = input.addOnKeys.map((key) => ({
+      campus_id: input.campusId,
+      booking_id: bookingRow.id,
+      add_on_key: key,
+    }));
+
+    const { error: addOnError } = await supabase.from('booking_add_ons').insert(addOnRows);
+    if (addOnError) {
+      return fail('UNKNOWN', 'Could not save booking add-ons.');
+    }
+  }
+
+  if (input.fullService && input.packingSlotId) {
+    const { data: currentSlot } = await supabase
+      .from('slots')
+      .select('booked')
+      .eq('id', input.packingSlotId)
+      .single();
+
+    if (currentSlot) {
+      await supabase
+        .from('slots')
+        .update({ booked: currentSlot.booked + 1 })
+        .eq('id', input.packingSlotId);
+    }
+  }
+
+  return ok({
+    id: bookingRow.id,
+    campusId: bookingRow.campus_id,
+    userId: bookingRow.user_id,
+    status: bookingRow.status,
+    housingType: bookingRow.housing_type,
+    address: bookingRow.address,
+    standardCount: bookingRow.standard_count,
+    largeCount: bookingRow.large_count,
+    registrationTierKey: bookingRow.registration_tier_key,
+    fullService: bookingRow.full_service,
+    packingSlotId: bookingRow.packing_slot_id ?? undefined,
+    addOnKeys: input.addOnKeys,
+    referralCode: bookingRow.referral_code ?? undefined,
+    parentPayToken: bookingRow.parent_pay_token ?? undefined,
+    quote: bookingRow.quote,
+    registeredAt: bookingRow.registered_at ?? undefined,
+    freeCancelUntil: bookingRow.free_cancel_until ?? null,
+    balanceDueAt: bookingRow.balance_due_at,
+  });
 }
 
 /** Pays the registration; Dibs Protect holds it. Errors: PAYMENT_FAILED, DEADLINE_PASSED, REFERRAL_INVALID. */
