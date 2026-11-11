@@ -23,21 +23,36 @@ export function summerHoldLines(row: PriceRow, input: SummerHoldInput, asOf: Dat
     throw new PricingError('VALIDATION', 'Add at least one item');
   }
 
-  // Waiting on Kyan: does $449 replace item prices for up to 7 items, does registration still apply,
-  // what does item 8+ cost, can it combine with priority or delivery
-  if (input.fullService) {
-    throw new PricingError('VALIDATION', 'Full Service rules not decided');
-  }
+  // Full Service covers the first maxItems items, standard first and large last, so the items
+  // left to pay for are the most expensive ones. Registration, add-ons and the off-campus fee still apply
+  const covered = input.fullService ? row.fullService.maxItems : 0;
+  const coveredStandard = Math.min(standardCount, covered);
+  const coveredLarge = Math.min(largeCount, covered - coveredStandard);
+  const paidStandard = standardCount - coveredStandard;
+  const paidLarge = largeCount - coveredLarge;
+  const extra = input.fullService ? 'Additional ' : '';
 
-  const lines: Line[] = [
+  const lines: Line[] = [];
+  if (input.fullService) {
+    lines.push({
+      key: 'full_service',
+      label: `Full Service (first ${row.fullService.maxItems} items)`,
+      cents: row.fullService.cents,
+    });
+  }
+  lines.push(
     {
       key: 'standard_items',
-      label: `Standard items × ${standardCount}`,
-      cents: standardCount * row.itemStandardCents,
+      label: `${extra}Standard items × ${paidStandard}`,
+      cents: paidStandard * row.itemStandardCents,
     },
-    { key: 'large_items', label: `Large items × ${largeCount}`, cents: largeCount * row.itemLargeCents },
+    {
+      key: 'large_items',
+      label: `${extra}Large items × ${paidLarge}`,
+      cents: paidLarge * row.itemLargeCents,
+    },
     { key: 'registration', label: tier.label, cents: tier.cents },
-  ];
+  );
 
   for (const key of input.addOnKeys) {
     const addOn = row.addOns.find((a) => a.key === key);
