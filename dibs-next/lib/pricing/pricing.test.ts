@@ -99,6 +99,27 @@ describe('Summer Hold quote', () => {
     expect(q.lines.some((l) => l.key === 'tax')).toBe(false);
   });
 
+  it('Full Service covers 7 standard items, the 2 large ones pay their item price', () => {
+    const q = summerHoldLines(
+      ucr,
+      { standardCount: 7, largeCount: 2, addOnKeys: [], offCampus: false, fullService: true },
+      at('2027-05-01T12:00:00-07:00'),
+    );
+    expect(q.tierKey).toBe('standard');
+    expect(q.totalCents).toBe(62200);
+    expect(q.lines.some((l) => l.key === 'standard_items')).toBe(false);
+  });
+
+  it('Full Service with 4 standard items still charges registration and Protect Plus', () => {
+    const q = summerHoldLines(
+      ucr,
+      { standardCount: 4, largeCount: 0, addOnKeys: ['protect_plus'], offCampus: false, fullService: true },
+      april1,
+    );
+    expect(q.tierKey).toBe('early');
+    expect(q.totalCents).toBe(50300);
+  });
+
   it('rejects an unknown add-on', () => {
     expect(() => summerHoldLines(ucr, { ...base, addOnKeys: ['nope'] }, april1)).toThrow(PricingError);
   });

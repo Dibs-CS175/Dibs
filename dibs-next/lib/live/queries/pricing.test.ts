@@ -125,9 +125,15 @@ describe('getSummerHoldQuote', () => {
     expect(r.ok && r.data.totalCents).toBe(22100);
   });
 
+  it('quotes Full Service in place of the covered items', async () => {
+    asOf('2027-04-01T12:00:00-07:00');
+    const r = await getSummerHoldQuote({ ...input, fullService: true });
+    expect(r.ok && r.data.totalCents).toBe(51300);
+  });
+
   it('returns pricing errors instead of throwing', async () => {
     asOf('2027-04-01T12:00:00-07:00');
-    expect(errorCode(await getSummerHoldQuote({ ...input, fullService: true }))).toBe('VALIDATION');
+    expect(errorCode(await getSummerHoldQuote({ ...input, standardCount: 0, largeCount: 0 }))).toBe('VALIDATION');
     expect(errorCode(await getSummerHoldQuote({ ...input, campusId: 'nowhere' }))).toBe('NOT_FOUND');
   });
 });
