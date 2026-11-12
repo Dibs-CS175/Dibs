@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Heart } from 'lucide-react';
 import { ListingPhoto } from './listing-photo';
@@ -8,20 +9,55 @@ import { formatMoney, shortName, timeAgo } from '@/lib/format';
 import type { ListingCardView } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useTimeZone } from '@/lib/campus';
+import { usePrefersReducedMotion } from '@/lib/hooks';
+
+/** How long a just-published listing stays highlighted. */
+const NEW_FOR_MS = 30_000;
+
+/** True while the listing is under about 30 seconds old, then turns itself off. */
+function useJustListed(createdAt: string, enabled: boolean): boolean {
+  const [fresh, setFresh] = useState(false);
+  useEffect(() => {
+    if (!enabled) return;
+    const age = Date.now() - new Date(createdAt).getTime();
+    // A clock that runs behind the server makes the age negative; never highlight longer than the window.
+    const left = Math.min(NEW_FOR_MS, NEW_FOR_MS - age);
+    if (!(left > 0)) {
+      setFresh(false);
+      return;
+    }
+    setFresh(true);
+    const id = window.setTimeout(() => setFresh(false), left);
+    return () => window.clearTimeout(id);
+  }, [createdAt, enabled]);
+  return fresh;
+}
 
 export function ListingCard({
   view,
   onToggleSave,
   savePending,
+  highlightNew = false,
 }: {
   view: ListingCardView;
   onToggleSave?: (listingId: string, next: boolean) => void;
   savePending?: boolean;
+  /** Outline the card while it is under about 30 seconds old (used on Browse). */
+  highlightNew?: boolean;
 }) {
   const tz = useTimeZone();
   const { listing: l, seller, saved } = view;
+  const reducedMotion = usePrefersReducedMotion();
+  const isNew = useJustListed(l.createdAt, highlightNew);
   return (
-    <article className="relative flex min-w-0 flex-col gap-2">
+    <article
+      className={cn(
+        'relative flex min-w-0 flex-col gap-2 rounded-card',
+        !reducedMotion && 'transition-shadow duration-320 ease-dibs',
+        isNew && 'ring-2 ring-navel ring-offset-4 ring-offset-background',
+        isNew && !reducedMotion && 'animate-in fade-in slide-in-from-top-2 duration-320',
+      )}
+    >
       <Link href={`/listings/${l.id}`} className="flex flex-col gap-2 rounded-card">
         <ListingPhoto
           src={l.photos[0] ?? 'ph:Package:0'}
@@ -45,6 +81,11 @@ export function ListingCard({
         <HousingFitBadge fit={l.housingFit} />
         <SourceBadge source={l.source} />
       </div>
+      {isNew ? (
+        <span className="pointer-events-none absolute left-2 top-2 rounded-full bg-navel px-2 py-0.5 text-xs font-bold text-on-accent shadow-1">
+          New
+        </span>
+      ) : null}
       {onToggleSave ? (
         <button
           type="button"

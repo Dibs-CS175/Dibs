@@ -15,7 +15,6 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { Stepper } from '@/components/ui/stepper';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { publishListing, saveListingDraft } from '@/lib/actions/listings';
 import { CATEGORIES, CONDITIONS, HOUSING_FITS } from '@/lib/config/app';
 import { formatMoney, formatTime } from '@/lib/format';
@@ -257,10 +256,13 @@ export default function SellPage() {
 
         {step === 2 ? (
           <>
-            <div className="flex min-h-[44px] items-center gap-3">
+            <label
+              htmlFor="free"
+              className="flex min-h-[44px] w-fit cursor-pointer items-center gap-3 text-sm font-semibold text-ink"
+            >
               <Switch id="free" checked={free} onCheckedChange={setFree} />
-              <Label htmlFor="free">Give it away free</Label>
-            </div>
+              Give it away free
+            </label>
             {!free ? (
               <Field
                 id="price"

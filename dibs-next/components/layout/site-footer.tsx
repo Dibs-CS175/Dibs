@@ -12,16 +12,22 @@ export function SiteFooter() {
           </p>
         </div>
         <nav aria-label="Footer" className="flex flex-wrap gap-x-4 text-sm">
-          <Link href="/browse" className="inline-flex min-h-[44px] items-center font-medium hover:text-rind">
+          <Link
+            href="/browse"
+            className="inline-flex min-h-[44px] min-w-[44px] items-center font-medium hover:text-rind"
+          >
             Browse
           </Link>
           <Link
             href="/summer-hold"
-            className="inline-flex min-h-[44px] items-center font-medium hover:text-rind"
+            className="inline-flex min-h-[44px] min-w-[44px] items-center font-medium hover:text-rind"
           >
             Summer Hold
           </Link>
-          <Link href="/sell" className="inline-flex min-h-[44px] items-center font-medium hover:text-rind">
+          <Link
+            href="/sell"
+            className="inline-flex min-h-[44px] min-w-[44px] items-center font-medium hover:text-rind"
+          >
             Sell
           </Link>
         </nav>

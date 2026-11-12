@@ -182,14 +182,17 @@ export function FilterDrawer({
               ))}
             </div>
           </fieldset>
-          <div className="flex min-h-[44px] items-center justify-between gap-4">
-            <Label htmlFor="free-only">Free only</Label>
+          <label
+            htmlFor="free-only"
+            className="flex min-h-[44px] cursor-pointer items-center justify-between gap-4 text-sm font-semibold text-ink"
+          >
+            Free only
             <Switch
               id="free-only"
               checked={value.freeOnly ?? false}
               onCheckedChange={(on) => onChange({ ...value, freeOnly: on })}
             />
-          </div>
+          </label>
         </div>
       </SheetContent>
     </Sheet>

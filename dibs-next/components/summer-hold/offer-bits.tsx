@@ -66,15 +66,19 @@ export function Counter({
   );
 }
 
-/** Full Service card. Price and item limit come from getSummerHoldOffers. */
+/** Full Service card. Price, item limit and item prices come from getSummerHoldOffers. */
 export function FullServiceCard({
   cents,
   maxItems,
+  itemStandardCents,
+  itemLargeCents,
   checked,
   onChange,
 }: {
   cents: number;
   maxItems: number;
+  itemStandardCents?: number;
+  itemLargeCents?: number;
   checked: boolean;
   onChange: (v: boolean) => void;
 }) {
@@ -96,7 +100,21 @@ export function FullServiceCard({
           onChange={(e) => onChange(e.target.checked)}
         />
       </span>
-      <span>Dibs packs up to {maxItems} items for you.</span>
+      <span>Dibs packs and stores up to {maxItems} items for you. You pick a packing time.</span>
+      <ul className="flex list-disc flex-col gap-1 pl-5 text-sm text-muted">
+        <li>Covers your first {maxItems} items. Standard items count first, then large ones.</li>
+        <li>
+          {itemStandardCents !== undefined && itemLargeCents !== undefined ? (
+            <>
+              Items past {maxItems} cost their usual price ({formatMoney(itemStandardCents)} standard,{' '}
+              {formatMoney(itemLargeCents)} large).
+            </>
+          ) : (
+            <>Items past {maxItems} cost their usual price.</>
+          )}
+        </li>
+        <li>Registration and any add-ons are still added.</li>
+      </ul>
       <span className="tabular font-semibold">{formatMoney(cents)}</span>
     </label>
   );
@@ -117,11 +135,13 @@ export function AddOnList({
       <legend className="mb-1 font-semibold">Add-ons (optional)</legend>
       {addOns.map((a) => {
         const on = value.includes(a.key);
+        // The whole card is the label, so tapping anywhere on it toggles the add-on.
         return (
-          <div
+          <label
             key={a.key}
+            htmlFor={`addon-${a.key}`}
             className={cn(
-              'flex items-start gap-3 rounded-card border p-4',
+              'flex cursor-pointer items-start gap-3 rounded-card border p-4',
               on ? 'border-grove bg-success-bg' : 'border-line bg-surface',
             )}
           >
@@ -131,16 +151,23 @@ export function AddOnList({
               onCheckedChange={(v) =>
                 onChange(v === true ? [...value, a.key] : value.filter((k) => k !== a.key))
               }
+              aria-labelledby={`addon-${a.key}-label`}
+              aria-describedby={`addon-${a.key}-note`}
               className="mt-1"
             />
-            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <Label htmlFor={`addon-${a.key}`} className="flex flex-wrap justify-between gap-2 text-base">
+            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span
+                id={`addon-${a.key}-label`}
+                className="flex flex-wrap justify-between gap-2 text-base font-semibold text-ink"
+              >
                 <span>{a.label}</span>
                 <span className="tabular">{formatMoney(a.cents)}</span>
-              </Label>
-              <span className="text-sm text-muted">{a.note}</span>
-            </div>
-          </div>
+              </span>
+              <span id={`addon-${a.key}-note`} className="text-sm text-muted">
+                {a.note}
+              </span>
+            </span>
+          </label>
         );
       })}
     </fieldset>

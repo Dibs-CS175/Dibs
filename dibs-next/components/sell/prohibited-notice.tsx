@@ -1,6 +1,5 @@
 import { TriangleAlert } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 import { PROHIBITED_CATEGORIES } from '@/lib/config/app';
 
 /** Lists items Dibs does not allow. The seller confirms before continuing. */
@@ -23,10 +22,14 @@ export function ProhibitedNotice({
           </li>
         ))}
       </ul>
-      <div className="flex min-h-[44px] items-center gap-3">
+      {/* The whole row is the label, so the tap target is 44 px tall, not just the 20 px box. */}
+      <label
+        htmlFor="not-prohibited"
+        className="flex min-h-[44px] cursor-pointer items-center gap-3 text-sm font-semibold text-ink"
+      >
         <Checkbox id="not-prohibited" checked={confirmed} onCheckedChange={(v) => onConfirm(v === true)} />
-        <Label htmlFor="not-prohibited">My item is not on this list</Label>
-      </div>
+        My item is not on this list
+      </label>
     </div>
   );
 }

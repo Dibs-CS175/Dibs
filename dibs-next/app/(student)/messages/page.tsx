@@ -9,7 +9,8 @@ import { getInbox } from '@/lib/queries/messages';
 import { errorMessage } from '@/lib/errorMessages';
 
 export default function InboxPage() {
-  const { state, retry } = useQuery(() => getInbox(), []);
+  // Refetch so a new conversation or reply shows up without a reload.
+  const { state, retry } = useQuery(() => getInbox(), [], { pollMs: 4000 });
   return (
     <div className="container flex max-w-[760px] flex-col gap-6 py-8 md:py-12">
       <PageHeader title="Messages" />

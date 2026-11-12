@@ -34,6 +34,7 @@ import { ok } from '@/lib/result';
 import type {
   AddOnKey,
   HousingType,
+  Quote,
   SlotView,
   SummerHoldBooking,
   SummerHoldInput,
@@ -42,6 +43,10 @@ import type {
 import { cn } from '@/lib/utils';
 
 const STEPS = ['Where', 'Items', 'Options', 'Review and pay'];
+
+/** The items' own price, shown next to the all-in total. Display only; the total comes from the quote. */
+const itemsOnlyCents = (q: Quote) =>
+  q.lines.filter((l) => l.kind === 'item').reduce((sum, l) => sum + l.cents, 0);
 
 export default function BookSummerHoldPage() {
   const campus = useCampus();
@@ -93,7 +98,13 @@ export default function BookSummerHoldPage() {
     const t = setTimeout(() => setQuoteKey(inputKey), 300);
     return () => clearTimeout(t);
   }, [inputKey]);
-  const quote = useQuery(() => getSummerHoldQuote(JSON.parse(quoteKey) as SummerHoldInput), [quoteKey]);
+  // No quote until there's an item: the backend returns VALIDATION for zero items.
+  const quote = useQuery(() => {
+    const q = JSON.parse(quoteKey) as SummerHoldInput;
+    return q.standardCount + q.largeCount > 0
+      ? getSummerHoldQuote(q)
+      : Promise.resolve(ok<Quote | null>(null));
+  }, [quoteKey]);
 
   const create = useAction(createBooking);
   const pay = useAction(payRegistration);
@@ -163,6 +174,9 @@ export default function BookSummerHoldPage() {
         <CheckCircle2 className="h-14 w-14 text-success" aria-hidden />
         <h1 className="text-4xl font-extrabold">You’re registered.</h1>
         <p className="text-muted">Dibs Protect is holding your registration payment.</p>
+        <p className="text-sm text-muted">
+          You can cancel for free for {o.cancelWindowDays} days after registering.
+        </p>
         <p>
           Balance due: <strong>{formatMaybeDate(paid.balanceDueAt, tz)}</strong>
         </p>
@@ -195,6 +209,7 @@ export default function BookSummerHoldPage() {
             void next();
           }}
         >
+          {step > 0 ? <TierBanner tier={o.currentTier} cancelWindowDays={o.cancelWindowDays} /> : null}
           <h2 className="text-2xl font-bold">{STEPS[step]}</h2>
 
           {step === 0 ? (
@@ -274,6 +289,8 @@ export default function BookSummerHoldPage() {
               <FullServiceCard
                 cents={o.fullService.cents}
                 maxItems={o.fullService.maxItems}
+                itemStandardCents={o.itemStandardCents}
+                itemLargeCents={o.itemLargeCents}
                 checked={fullService}
                 onChange={setFullService}
               />
@@ -315,7 +332,6 @@ export default function BookSummerHoldPage() {
 
           {step === 3 ? (
             <>
-              <TierBanner tier={o.currentTier} cancelWindowDays={o.cancelWindowDays} />
               <div className="flex flex-col gap-1">
                 <Field
                   id="ref"
@@ -464,8 +480,18 @@ export default function BookSummerHoldPage() {
             <LoadingBlock className="h-32 rounded-card" />
           ) : quote.state.status === 'error' ? (
             <ErrorState message={errorMessage(quote.state.error)} onRetry={quote.retry} />
+          ) : quote.state.data === null ? (
+            <p className="rounded-card bg-sunk p-4 text-sm text-muted">Add an item to see your total.</p>
           ) : (
-            <QuoteLines quote={quote.state.data} />
+            <QuoteLines
+              quote={quote.state.data}
+              note={
+                // With Full Service the $449 covers the items, so an items-only price would mislead.
+                !fullService && itemsOnlyCents(quote.state.data) > 0
+                  ? { label: 'Items only', cents: itemsOnlyCents(quote.state.data) }
+                  : undefined
+              }
+            />
           )}
           <p className="text-xs text-muted">All-in: every required fee is included.</p>
         </aside>
