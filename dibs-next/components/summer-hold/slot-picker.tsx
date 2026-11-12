@@ -39,8 +39,11 @@ export function SlotPicker({
                   key={s.id}
                   className={cn(
                     'flex min-h-[56px] cursor-pointer flex-col justify-center rounded-input border px-3 py-2 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-navel',
-                    s.isFull && 'cursor-not-allowed bg-sunk text-muted',
-                    value === s.id ? 'border-grove bg-success-bg' : 'border-line bg-surface',
+                    value === s.id
+                      ? 'border-grove bg-success-bg'
+                      : s.isFull
+                        ? 'cursor-not-allowed border-line bg-sunk text-muted'
+                        : 'border-line bg-surface',
                   )}
                 >
                   <input

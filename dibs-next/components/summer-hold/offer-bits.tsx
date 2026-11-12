@@ -66,15 +66,19 @@ export function Counter({
   );
 }
 
-/** Full Service card. Price and item limit come from getSummerHoldOffers. */
+/** Full Service card. Price, item limit and item prices come from getSummerHoldOffers. */
 export function FullServiceCard({
   cents,
   maxItems,
+  itemStandardCents,
+  itemLargeCents,
   checked,
   onChange,
 }: {
   cents: number;
   maxItems: number;
+  itemStandardCents?: number;
+  itemLargeCents?: number;
   checked: boolean;
   onChange: (v: boolean) => void;
 }) {
@@ -96,7 +100,21 @@ export function FullServiceCard({
           onChange={(e) => onChange(e.target.checked)}
         />
       </span>
-      <span>Dibs packs up to {maxItems} items for you.</span>
+      <span>Dibs packs and stores up to {maxItems} items for you. You pick a packing time.</span>
+      <ul className="flex list-disc flex-col gap-1 pl-5 text-sm text-muted">
+        <li>Covers your first {maxItems} items. Standard items count first, then large ones.</li>
+        <li>
+          {itemStandardCents !== undefined && itemLargeCents !== undefined ? (
+            <>
+              Items past {maxItems} cost their usual price ({formatMoney(itemStandardCents)} standard,{' '}
+              {formatMoney(itemLargeCents)} large).
+            </>
+          ) : (
+            <>Items past {maxItems} cost their usual price.</>
+          )}
+        </li>
+        <li>Registration and any add-ons are still added.</li>
+      </ul>
       <span className="tabular font-semibold">{formatMoney(cents)}</span>
     </label>
   );
