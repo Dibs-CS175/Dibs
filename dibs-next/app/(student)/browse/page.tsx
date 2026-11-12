@@ -3,7 +3,7 @@
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { Search, SearchX, X } from 'lucide-react';
+import { Search, SearchX, Tag, X } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { ListingCard } from '@/components/listing/listing-card';
 import { CategoryChips, FilterDrawer } from '@/components/listing/filters';
@@ -14,9 +14,23 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { toggleSave } from '@/lib/actions/listings';
 import { useAction, useQuery } from '@/lib/hooks';
 import { searchListings } from '@/lib/queries/listings';
-import type { Category, ListingCardView, ListingSearch, SortOption } from '@/lib/types';
+import type { Category, ListingCardView, ListingSearch, Page, SortOption } from '@/lib/types';
 import { errorMessage } from '@/lib/errorMessages';
 import { useCampus } from '@/lib/campus';
+
+/** How often browse checks for new listings, so a card published on another device shows up. */
+const POLL_MS = 4000;
+
+const withoutKnown = (items: ListingCardView[], known: ListingCardView[]) => {
+  const ids = new Set(known.map((v) => v.listing.id));
+  return items.filter((v) => !ids.has(v.listing.id));
+};
+
+/** Puts listings the user hasn't seen yet at the top and leaves loaded pages alone. */
+const mergeNew = (current: Page<ListingCardView>, fresh: Page<ListingCardView>) => {
+  const added = withoutKnown(fresh.items, current.items);
+  return added.length ? { ...current, items: [...added, ...current.items] } : current;
+};
 
 const countActive = (f: ListingSearch) =>
   [f.minCents || f.maxCents, f.conditions?.length, f.fits?.length, f.source, f.freeOnly].filter(Boolean)
@@ -32,7 +46,10 @@ function BrowseScreen() {
     sort: 'newest',
   });
   const [qDraft, setQDraft] = useState(filters.q ?? '');
-  const { state, retry, setData } = useQuery(() => searchListings(filters), [JSON.stringify(filters)]);
+  const { state, retry, updateData } = useQuery(() => searchListings(filters), [JSON.stringify(filters)], {
+    pollMs: POLL_MS,
+    merge: mergeNew,
+  });
   const [more, setMore] = useState<{ pending: boolean; error: string | null }>({
     pending: false,
     error: null,
@@ -44,7 +61,11 @@ function BrowseScreen() {
     setMore({ pending: true, error: null });
     const r = await searchListings({ ...filters, cursor: state.data.nextCursor });
     if (r.ok) {
-      setData({ items: [...state.data.items, ...r.data.items], nextCursor: r.data.nextCursor });
+      // New listings at the top shift the pages, so skip any card that is already showing.
+      updateData((d) => ({
+        items: [...d.items, ...withoutKnown(r.data.items, d.items)],
+        nextCursor: r.data.nextCursor,
+      }));
       setMore({ pending: false, error: null });
     } else setMore({ pending: false, error: errorMessage(r.error) });
   };
@@ -57,16 +78,16 @@ function BrowseScreen() {
       else toast.error(errorMessage(r.error, {}));
       return;
     }
-    if (state.status === 'data') {
-      setData({
-        ...state.data,
-        items: state.data.items.map(
-          (v): ListingCardView => (v.listing.id === listingId ? { ...v, saved: r.data.saved } : v),
-        ),
-      });
-    }
+    updateData((d) => ({
+      ...d,
+      items: d.items.map((v): ListingCardView =>
+        v.listing.id === listingId ? { ...v, saved: r.data.saved } : v,
+      ),
+    }));
     toast.success(r.data.saved ? 'Saved' : 'Removed from saved');
   };
+
+  const filtered = Boolean(countActive(filters) || filters.q || filters.category);
 
   const clearAll = () => {
     setFilters({ sort: filters.sort });
@@ -122,7 +143,7 @@ function BrowseScreen() {
             <option value="price_desc">Price high to low</option>
           </NativeSelect>
         </label>
-        {countActive(filters) || filters.q || filters.category ? (
+        {filtered ? (
           <Button variant="link" onClick={clearAll}>
             <X className="h-4 w-4" aria-hidden /> Clear all
           </Button>
@@ -134,18 +155,27 @@ function BrowseScreen() {
       ) : state.status === 'error' ? (
         <ErrorState message={errorMessage(state.error)} onRetry={retry} />
       ) : state.data.items.length === 0 ? (
-        <EmptyState
-          icon={SearchX}
-          text="Nothing matches those filters yet."
-          actionLabel="Clear filters"
-          onAction={clearAll}
-        />
+        filtered ? (
+          <EmptyState
+            icon={SearchX}
+            text="Nothing matches those filters yet."
+            actionLabel="Clear filters"
+            onAction={clearAll}
+          />
+        ) : (
+          <EmptyState
+            icon={Tag}
+            text="Nothing for sale here yet. New listings show up on this page on their own."
+            actionLabel="Sell something"
+            href="/sell"
+          />
+        )
       ) : (
         <>
           <ul className="grid grid-cols-2 gap-x-4 gap-y-6 md:grid-cols-3 lg:grid-cols-4">
             {state.data.items.map((v) => (
               <li key={v.listing.id}>
-                <ListingCard view={v} onToggleSave={onSave} savePending={save.pending} />
+                <ListingCard view={v} onToggleSave={onSave} savePending={save.pending} highlightNew />
               </li>
             ))}
           </ul>
