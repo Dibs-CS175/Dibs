@@ -9,10 +9,11 @@ import { now } from '@/lib/clock';
 import rawTables from '@/lib/fixtures/priceTable.json';
 import { notImplemented } from '@/lib/live/not-implemented';
 import { getSummerHoldQuote } from '@/lib/live/queries/pricing';
+import { payments } from '@/lib/payments';
 import { currentTier, type PriceRow } from '@/lib/pricing';
 import { fail, ok, type Result } from '@/lib/result';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import type { BookingDraftInput, MyBooking, ParentPayView, SummerHoldBooking } from '@/lib/types';
+import type { AddOnKey, BookingDraftInput, MyBooking, ParentPayView, SummerHoldBooking } from '@/lib/types';
 
 const tables = rawTables as unknown as PriceRow[];
 
@@ -27,6 +28,30 @@ function getCampusPriceRow(campusId: string, asOf: Date): PriceRow | null {
     rows.at(-1) ??
     null
   );
+}
+
+// Maps a summer_hold_bookings row to the app type. Add-ons live in their own table, so they are passed in.
+function toBooking(r: any, addOnKeys: AddOnKey[]): SummerHoldBooking {
+  return {
+    id: r.id,
+    campusId: r.campus_id,
+    userId: r.user_id,
+    status: r.status,
+    housingType: r.housing_type,
+    address: r.address,
+    standardCount: r.standard_count,
+    largeCount: r.large_count,
+    registrationTierKey: r.registration_tier_key,
+    fullService: r.full_service,
+    packingSlotId: r.packing_slot_id ?? undefined,
+    addOnKeys,
+    referralCode: r.referral_code ?? undefined,
+    parentPayToken: r.parent_pay_token ?? undefined,
+    quote: r.quote,
+    registeredAt: r.registered_at ?? undefined,
+    freeCancelUntil: r.free_cancel_until ?? null,
+    balanceDueAt: r.balance_due_at,
+  };
 }
 
 /**
@@ -178,8 +203,82 @@ export async function payRegistration(
   bookingId: string,
   referralCode: string,
 ): Promise<Result<SummerHoldBooking>> {
-  // STUB(summerHold): replace with real implementation
-  return notImplemented('payRegistration', 'lib/live/actions/summerHold.ts');
+  // Referral credit is cut from the class demo (Nov 9), so the code is accepted and not applied.
+  void referralCode;
+
+  const supabase = await createSupabaseServerClient();
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError || !authData.user) {
+    return fail('NOT_SIGNED_IN', 'Sign in to pay your registration.');
+  }
+
+  const { data: draft, error: readError } = await supabase
+    .from('summer_hold_bookings')
+    .select('*')
+    .eq('id', bookingId)
+    .eq('user_id', authData.user.id)
+    .maybeSingle();
+
+  if (readError) {
+    return fail('UNKNOWN', 'Could not load your booking.');
+  }
+  if (!draft) {
+    return fail('NOT_FOUND', 'Booking not found.');
+  }
+
+  const { data: addOnsData } = await supabase
+    .from('booking_add_ons')
+    .select('add_on_key')
+    .eq('booking_id', bookingId);
+  const addOnKeys = (addOnsData ?? []).map((r) => r.add_on_key as AddOnKey);
+
+  // A second tap on Pay returns the paid booking instead of charging again.
+  if (draft.status === 'registered') {
+    return ok(toBooking(draft, addOnKeys));
+  }
+  if (draft.status !== 'draft') {
+    return fail('CONFLICT', 'This booking can no longer be paid.');
+  }
+
+  // The student pays the tier they booked. If that tier has ended, they rebook at the current price.
+  const asOf = now();
+  const row = getCampusPriceRow(draft.campus_id, asOf);
+  const tier = row ? currentTier(row, asOf) : null;
+  if (!row || !tier || tier.key !== draft.registration_tier_key) {
+    return fail('DEADLINE_PASSED', 'That registration price has ended. Start a new booking.');
+  }
+
+  const charge = await payments.charge({
+    amountCents: tier.cents,
+    sourceToken: 'mock_card',
+    metadata: { kind: 'summer_hold_registration', bookingId },
+  });
+  if (!charge.ok) {
+    return fail('PAYMENT_FAILED', 'Your payment did not go through. Try again.');
+  }
+
+  const freeCancelUntil = new Date(asOf.getTime() + row.cancelWindowDays * 24 * 60 * 60 * 1000);
+
+  // The status filter makes this a no-op if another request already registered the booking.
+  const { data: paidRow, error: updateError } = await supabase
+    .from('summer_hold_bookings')
+    .update({
+      status: 'registered',
+      registered_at: asOf.toISOString(),
+      free_cancel_until: freeCancelUntil.toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', bookingId)
+    .eq('user_id', authData.user.id)
+    .eq('status', 'draft')
+    .select()
+    .maybeSingle();
+
+  if (updateError || !paidRow) {
+    return fail('UNKNOWN', 'Payment recorded but the booking did not update. Reload and check your booking.');
+  }
+
+  return ok(toBooking(paidRow, addOnKeys));
 }
 
 /** Creates a link a parent can open without signing in. */
