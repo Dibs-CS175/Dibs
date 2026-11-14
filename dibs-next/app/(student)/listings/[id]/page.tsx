@@ -7,29 +7,20 @@ import { toast } from 'sonner';
 import { ChevronLeft, MessageCircle, PackageX, Tag } from 'lucide-react';
 import { ConditionBadge, HousingFitBadge, SourceBadge } from '@/components/listing/badges';
 import { Gallery } from '@/components/listing/gallery';
-import { HoldToDibs } from '@/components/listing/hold-to-dibs';
 import { ListingCard } from '@/components/listing/listing-card';
 import { SellerCard } from '@/components/listing/seller-card';
-import { CheckoutSheet, OfferSheet } from '@/components/listing/sheets';
+import { OfferSheet } from '@/components/listing/sheets';
 import { EmptyState, ErrorState, PageSkeleton } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { removeListing } from '@/lib/actions/listings';
 import { startConversation } from '@/lib/actions/messages';
-import { holdToDibs, makeOffer } from '@/lib/actions/orders';
+import { makeOffer } from '@/lib/actions/orders';
 import { formatMoney, timeAgo } from '@/lib/format';
 import { useAction, useQuery } from '@/lib/hooks';
 import { getListing, getSimilarListings } from '@/lib/queries/listings';
-import { getCheckoutQuote } from '@/lib/queries/pricing';
-import { getSettings } from '@/lib/queries/users';
 import { errorMessage } from '@/lib/errorMessages';
 import { useTimeZone } from '@/lib/campus';
 import { useSession } from '@/lib/session';
-
-const HOLD_ERRORS = {
-  CONFLICT: 'Someone called dibs first.',
-  PAYMENT_FAILED: 'Your card was declined. Try another card.',
-  NOT_FOUND: 'This listing is no longer available.',
-};
 
 export default function ListingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -38,18 +29,8 @@ export default function ListingPage({ params }: { params: Promise<{ id: string }
   const { state: session } = useSession();
   const signedIn = session.status === 'data' && session.data !== null;
   const { state, retry } = useQuery(() => getListing(id), [id]);
-  const settings = useQuery(() => getSettings(), []);
   const similar = useQuery(() => getSimilarListings(id), [id]);
-  const [checkout, setCheckout] = useState(false);
-  const quote = useQuery(
-    () =>
-      checkout
-        ? getCheckoutQuote(id)
-        : Promise.resolve({ ok: true as const, data: { lines: [], totalCents: 0 } }),
-    [checkout, id],
-  );
   const [offerOpen, setOfferOpen] = useState(false);
-  const hold = useAction(holdToDibs);
   const offer = useAction(makeOffer);
   const chat = useAction(startConversation);
   const remove = useAction(removeListing);
@@ -77,7 +58,6 @@ export default function ListingPage({ params }: { params: Promise<{ id: string }
   }
 
   const { listing: l, seller, isOwn } = state.data;
-  const gesture = settings.state.status === 'data' ? settings.state.data.dibsGesture : 'hold';
   const unavailable = l.status !== 'active';
 
   return (
@@ -127,10 +107,6 @@ export default function ListingPage({ params }: { params: Promise<{ id: string }
             <p className="rounded-card bg-sunk p-4 font-semibold">Someone already called dibs on this.</p>
           ) : (
             <div className="flex flex-col gap-3">
-              <HoldToDibs
-                mode={gesture}
-                onComplete={() => (signedIn ? setCheckout(true) : requireSignIn())}
-              />
               <div className="grid grid-cols-2 gap-3">
                 <Button variant="secondary" onClick={() => (signedIn ? setOfferOpen(true) : requireSignIn())}>
                   <Tag className="h-4 w-4" aria-hidden /> Make an offer
@@ -199,28 +175,6 @@ export default function ListingPage({ params }: { params: Promise<{ id: string }
         .
       </p>
 
-      <CheckoutSheet
-        open={checkout}
-        onOpenChange={(o) => {
-          setCheckout(o);
-          if (!o) hold.clearError();
-        }}
-        title={l.title}
-        quote={quote.state}
-        onRetryQuote={quote.retry}
-        pending={hold.pending}
-        error={hold.error ? errorMessage(hold.error, HOLD_ERRORS) : null}
-        onConfirm={async () => {
-          const r = await hold.run(l.id);
-          if (!r) return;
-          if (!r.ok && r.error.code === 'NOT_SIGNED_IN') return requireSignIn();
-          if (r.ok) {
-            setCheckout(false);
-            toast.success('Dibs! Your payment is held by Dibs Protect.');
-            router.push(`/orders/${r.data.id}`);
-          }
-        }}
-      />
       <OfferSheet
         open={offerOpen}
         onOpenChange={setOfferOpen}
