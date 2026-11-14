@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { toast } from 'sonner';
-import { CalendarX, CheckCircle2, ChevronLeft, Copy, Send, ShieldCheck } from 'lucide-react';
+import { CalendarX, CheckCircle2, ChevronLeft, ShieldCheck } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { QuoteLines } from '@/components/listing/quote-lines';
 import { EmptyState, ErrorState, LoadingBlock, PageSkeleton } from '@/components/states';
@@ -19,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Field, FormError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Stepper } from '@/components/ui/stepper';
-import { createBooking, createParentPayLink, payRegistration } from '@/lib/actions/summerHold';
+import { createBooking, payRegistration } from '@/lib/actions/summerHold';
 import { useCampus, useTimeZone } from '@/lib/campus';
 import { HOUSING_TYPES } from '@/lib/config/app';
 import { errorMessage } from '@/lib/errorMessages';
@@ -27,7 +26,6 @@ import { formatMaybeDate } from '@/lib/format';
 import { useAction, useQuery } from '@/lib/hooks';
 import { offerKey, sendOfferChoices, useOffersShown } from '@/lib/offers';
 import { getSummerHoldOffers, getSummerHoldQuote } from '@/lib/queries/pricing';
-import { checkReferralCode } from '@/lib/queries/referrals';
 import { getPackingSlots } from '@/lib/queries/summerHold';
 import { getSettings } from '@/lib/queries/users';
 import { ok } from '@/lib/result';
@@ -61,11 +59,8 @@ export default function BookSummerHoldPage() {
   const [fullService, setFullService] = useState(false);
   const [packingSlotId, setPackingSlotId] = useState<string | null>(null);
   const [addOnKeys, setAddOnKeys] = useState<AddOnKey[]>([]);
-  const [referralText, setReferralText] = useState('');
-  const [referral, setReferral] = useState('');
   const [booking, setBooking] = useState<SummerHoldBooking | null>(null);
   const [paid, setPaid] = useState<SummerHoldBooking | null>(null);
-  const [parentLink, setParentLink] = useState<string | null>(null);
 
   const settings = useQuery(() => getSettings(), []);
   useEffect(() => {
@@ -90,7 +85,7 @@ export default function BookSummerHoldPage() {
     largeCount,
     fullService,
     addOnKeys,
-    referralCode: referral,
+    referralCode: '',
   };
   const inputKey = JSON.stringify(input);
   const [quoteKey, setQuoteKey] = useState(inputKey);
@@ -108,8 +103,6 @@ export default function BookSummerHoldPage() {
 
   const create = useAction(createBooking);
   const pay = useAction(payRegistration);
-  const link = useAction(createParentPayLink);
-  const refCheck = useAction(checkReferralCode);
 
   const o = offers.state.status === 'data' ? offers.state.data : null;
   useOffersShown(
@@ -332,90 +325,6 @@ export default function BookSummerHoldPage() {
 
           {step === 3 ? (
             <>
-              <div className="flex flex-col gap-1">
-                <Field
-                  id="ref"
-                  label="Referral code (optional)"
-                  error={refCheck.error ? errorMessage(refCheck.error) : null}
-                  hint={referral ? `Applied: ${referral}` : undefined}
-                >
-                  <div className="flex gap-2">
-                    <Input
-                      id="ref"
-                      value={referralText}
-                      onChange={(e) => setReferralText(e.target.value)}
-                      aria-describedby="ref-msg"
-                      className="max-w-[220px] font-mono uppercase"
-                    />
-                    <Button
-                      variant="secondary"
-                      disabled={!referralText.trim() || refCheck.pending}
-                      onClick={async () => {
-                        const r = await refCheck.run(referralText);
-                        if (r?.ok) {
-                          setReferral(r.data.code);
-                          toast.success(r.data.description);
-                        }
-                      }}
-                    >
-                      {refCheck.pending ? 'Checking…' : 'Apply'}
-                    </Button>
-                  </div>
-                </Field>
-              </div>
-
-              <div className="flex flex-col gap-2 rounded-card border border-line bg-surface p-4">
-                <p className="font-semibold">Someone else paying?</p>
-                <p className="text-sm text-muted">Send a link. They can pay without signing in.</p>
-                {parentLink ? (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <code className="break-all rounded-input bg-sunk px-2 py-1 text-sm">{parentLink}</code>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={async () => {
-                        try {
-                          await navigator.clipboard.writeText(parentLink);
-                          toast.success('Link copied');
-                        } catch {
-                          toast.error('Copy the link by selecting it.');
-                        }
-                      }}
-                    >
-                      <Copy className="h-4 w-4" aria-hidden /> Copy
-                    </Button>
-                    {typeof navigator !== 'undefined' && 'share' in navigator ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          void navigator
-                            .share({ title: 'Summer Hold payment', url: parentLink })
-                            .catch(() => undefined)
-                        }
-                      >
-                        <Send className="h-4 w-4" aria-hidden /> Share
-                      </Button>
-                    ) : null}
-                  </div>
-                ) : (
-                  <Button
-                    variant="secondary"
-                    className="w-fit"
-                    disabled={!booking || link.pending}
-                    onClick={async () => {
-                      if (!booking) return;
-                      const r = await link.run(booking.id);
-                      if (r?.ok) setParentLink(`${window.location.origin}${r.data.path}`);
-                    }}
-                  >
-                    <Send className="h-4 w-4" aria-hidden />{' '}
-                    {link.pending ? 'Creating link…' : 'Send to a parent'}
-                  </Button>
-                )}
-                <FormError message={link.error ? errorMessage(link.error) : null} />
-              </div>
-
               <p className="flex items-start gap-2 text-sm text-muted">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden /> Dibs Protect
                 holds your registration payment.
@@ -451,7 +360,7 @@ export default function BookSummerHoldPage() {
                 disabled={pending || !booking}
                 onClick={async () => {
                   if (!booking) return;
-                  const r = await pay.run(booking.id, referral);
+                  const r = await pay.run(booking.id, '');
                   if (r?.ok) {
                     sendOfferChoices([
                       { offerKey: offerKey.tier(o.currentTier.key), chosen: true },

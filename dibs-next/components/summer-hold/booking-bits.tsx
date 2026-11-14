@@ -47,12 +47,6 @@ export function BookingChoices({
       </dd>
       <dt className="font-semibold">Add-ons</dt>
       <dd>{addOnLabels.length ? addOnLabels.join(', ') : 'None'}</dd>
-      {booking.referralCode ? (
-        <>
-          <dt className="font-semibold">Referral code</dt>
-          <dd className="font-mono">{booking.referralCode}</dd>
-        </>
-      ) : null}
     </dl>
   );
 }
