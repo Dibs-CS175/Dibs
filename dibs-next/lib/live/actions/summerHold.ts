@@ -251,6 +251,7 @@ export async function payRegistration(
   const charge = await payments.charge({
     amountCents: tier.cents,
     sourceToken: 'mock_card',
+    bookingId,
     metadata: { kind: 'summer_hold_registration', bookingId },
   });
   if (!charge.ok) {
