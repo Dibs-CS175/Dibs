@@ -78,7 +78,8 @@ export default function PreviewPanelPage() {
   const open = (s: Screen) => {
     // In Demo, opening a screen signs in as the role it needs. Admins can open student screens too.
     if (live || !s.role) return;
-    if (s.role === 'student' ? dev.role === 'signed_out' : dev.role !== 'admin') setDevState({ role: s.role });
+    if (s.role === 'student' ? dev.role === 'signed_out' : dev.role !== 'admin')
+      setDevState({ role: s.role });
   };
 
   return (

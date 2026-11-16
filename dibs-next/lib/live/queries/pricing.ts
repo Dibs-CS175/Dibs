@@ -71,7 +71,8 @@ function toQuote(lines: Line[], totalCents: number): Quote {
 /** Item price, buyer fee, sales tax and the all-in total for Hold to Dibs. */
 export async function getCheckoutQuote(listingId: string): Promise<Result<Quote>> {
   try {
-    if (typeof listingId !== 'string' || !listingId) return fail('VALIDATION', 'Pick a listing to check out.');
+    if (typeof listingId !== 'string' || !listingId)
+      return fail('VALIDATION', 'Pick a listing to check out.');
     const supabase = await createSupabaseServerClient();
     const {
       data: { user },

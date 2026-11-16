@@ -23,7 +23,7 @@ export async function toggleSave(
     return fail('NOT_SIGNED_IN', 'Sign in to save listings.');
   }
 
-  // checks for if the actions is requesting a listing be saved. 
+  // checks for if the actions is requesting a listing be saved.
   if (saved) {
     const { data: profile, error: profileError } = await supabase
       .from('users')
@@ -55,7 +55,8 @@ export async function toggleSave(
     );
 
     if (error) return fail('UNKNOWN', 'Could not save this listing.');
-  } else { // if listing is not being saved, removes listing from saved_listing tables. 
+  } else {
+    // if listing is not being saved, removes listing from saved_listing tables.
     const { error } = await supabase
       .from('saved_listings')
       .delete()
@@ -82,10 +83,7 @@ export async function saveListingDraft(
     !(input.category === '' || CATEGORIES.some(({ id }) => id === input.category)) ||
     !(input.condition === '' || CONDITIONS.some(({ id }) => id === input.condition)) ||
     !(input.housingFit === '' || HOUSING_FITS.some(({ id }) => id === input.housingFit)) ||
-    !(
-      input.priceCents === null ||
-      (Number.isInteger(input.priceCents) && input.priceCents >= 0)
-    )
+    !(input.priceCents === null || (Number.isInteger(input.priceCents) && input.priceCents >= 0))
   ) {
     return fail('VALIDATION', 'Check the listing draft fields and try again.');
   }
@@ -275,7 +273,6 @@ export async function publishListing(draftId: string): Promise<Result<Listing>> 
 }
 
 export async function removeListing(listingId: string): Promise<Result<{ listingId: string }>> {
-
   if (typeof listingId !== 'string' || listingId.trim() === '') {
     return fail('VALIDATION', 'listingId cannot be found');
   }
@@ -285,17 +282,18 @@ export async function removeListing(listingId: string): Promise<Result<{ listing
   if (authError || !authData.user) {
     return fail('NOT_SIGNED_IN', 'Sign in to remove your listing.');
   }
-    const {data:selectedListing, error: deleteListingError } = await supabase
+  const { data: selectedListing, error: deleteListingError } = await supabase
     .from('listings')
     .update({
-      "status": 'removed'
+      status: 'removed',
     })
     .eq('id', listingId)
     .eq('seller_id', authData.user.id)
     .select('id')
     .maybeSingle();
 
-    if(deleteListingError) return fail("UNKNOWN", "Some error/conflict occurred when attempting to delete listing");
-    if(!selectedListing) return fail('NOT_FOUND', "No listing found to be remove");
-    return ok({listingId});
+  if (deleteListingError)
+    return fail('UNKNOWN', 'Some error/conflict occurred when attempting to delete listing');
+  if (!selectedListing) return fail('NOT_FOUND', 'No listing found to be remove');
+  return ok({ listingId });
 }

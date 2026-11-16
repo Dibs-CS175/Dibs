@@ -29,18 +29,24 @@ async function sendOtpCode(email: string): Promise<Result<null>> {
   return ok(null);
 }
 
-
 /** Sends a 6-digit code. Errors: VALIDATION, NOT_EDU, RATE_LIMITED. */
-export async function requestVerificationCode(email: string,): Promise<Result<{ sentTo: string; resendAfterSeconds: number }>> {
+export async function requestVerificationCode(
+  email: string,
+): Promise<Result<{ sentTo: string; resendAfterSeconds: number }>> {
   const normalizedEmail = email.trim().toLowerCase();
   const [localPart, domain, ...extraParts] = normalizedEmail.split('@');
   const hasWhitespace = [...normalizedEmail].some((character) => character.trim() === '');
   const hasEmptyDomainLabel = domain?.split('.').some((label) => label.length === 0) ?? true;
 
   // sanitizes email input and ensures its in a valid format.
-  if (!localPart ||  !domain ||
-    extraParts.length > 0 || hasWhitespace ||
-    !domain.includes('.') || hasEmptyDomainLabel ) {
+  if (
+    !localPart ||
+    !domain ||
+    extraParts.length > 0 ||
+    hasWhitespace ||
+    !domain.includes('.') ||
+    hasEmptyDomainLabel
+  ) {
     return fail('VALIDATION', 'Enter a valid email address.');
   }
 
@@ -55,19 +61,11 @@ export async function requestVerificationCode(email: string,): Promise<Result<{ 
   return ok({ sentTo: normalizedEmail, resendAfterSeconds: RESEND_SECONDS });
 }
 
-
-
-
-
-
-
 /**
  * Checks the code and starts a session. The backend decides the campus from the email.
  * Errors: CODE_INVALID, RATE_LIMITED.
  */
 export async function verifyCode(email: string, code: string): Promise<Result<Session>> {
-
-
   const normalizedEmail = email.trim().toLowerCase();
 
   const [localPart, domain, ...extraParts] = normalizedEmail.split('@');
@@ -119,7 +117,10 @@ export async function verifyCode(email: string, code: string): Promise<Result<Se
 
   // Table updating checks incase some part of updating the data goes wrong somehow.
   if (profileError) {
-    return fail('UNKNOWN', `Code verified, but the user profile could not be loaded: ${profileError.message}`);
+    return fail(
+      'UNKNOWN',
+      `Code verified, but the user profile could not be loaded: ${profileError.message}`,
+    );
   }
   const campus = campuses.find((candidate) => candidate.id === profile.campus_id);
   if (!campus) {
@@ -138,7 +139,7 @@ export async function verifyCode(email: string, code: string): Promise<Result<Se
     return fail('UNKNOWN', 'The user profile has an unsupported housing type.');
   }
   ///////////////////////////////////////////////////////////////////////////////
-  // Returns session of the updated user data.  
+  // Returns session of the updated user data.
   return ok({
     user: {
       id: profile.id,

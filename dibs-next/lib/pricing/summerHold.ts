@@ -85,8 +85,12 @@ export function summerHoldTeaser(row: PriceRow, asOf: Date): number | null {
 export function summerHoldOffers(row: PriceRow): Offer[] {
   return [
     { key: 'full_service', label: 'Full Service', cents: row.fullService.cents, selected: false },
-    ...row.addOns.map(
-      (a): Offer => ({ key: a.key, label: a.label, cents: a.cents, note: a.note, selected: false }),
-    ),
+    ...row.addOns.map((a): Offer => ({
+      key: a.key,
+      label: a.label,
+      cents: a.cents,
+      note: a.note,
+      selected: false,
+    })),
   ];
 }

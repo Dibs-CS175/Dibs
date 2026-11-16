@@ -59,7 +59,7 @@ function toBooking(r: any, addOnKeys: AddOnKey[]): SummerHoldBooking {
  * Errors: VALIDATION, SLOT_FULL, DEADLINE_PASSED.
  */
 export async function createBooking(input: BookingDraftInput): Promise<Result<SummerHoldBooking>> {
-const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data: authData, error: authError } = await supabase.auth.getUser();
   if (authError || !authData.user) {
     return fail('NOT_SIGNED_IN', 'Sign in to create a booking.');

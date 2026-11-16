@@ -70,9 +70,7 @@ export async function getGoods(status?: GoodsStatus): Promise<Result<GoodsItem[]
   const items: GoodsItem[] = (data ?? []).map((row) => {
     const rawListing = Array.isArray(row.listing) ? row.listing[0] : row.listing;
     const listing = rawListing as JoinedListing | null | undefined;
-    const sortedPhotos = [...(listing?.listing_photos ?? [])].sort(
-      (a, b) => a.position - b.position,
-    );
+    const sortedPhotos = [...(listing?.listing_photos ?? [])].sort((a, b) => a.position - b.position);
 
     return {
       id: row.id,
@@ -85,9 +83,7 @@ export async function getGoods(status?: GoodsStatus): Promise<Result<GoodsItem[]
       ...(listing?.description !== undefined ? { description: listing.description } : {}),
       photos: sortedPhotos.map((p) => p.photo_url),
       priceCents: listing?.price_cents ?? 0,
-      ...(row.cost_cents !== null && row.cost_cents !== undefined
-        ? { costCents: row.cost_cents }
-        : {}),
+      ...(row.cost_cents !== null && row.cost_cents !== undefined ? { costCents: row.cost_cents } : {}),
       ...(row.serial_number ? { serialNumber: row.serial_number } : {}),
       ...(row.hold_until ? { holdUntil: row.hold_until } : {}),
       status: row.status as GoodsStatus,

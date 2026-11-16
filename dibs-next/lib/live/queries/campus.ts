@@ -81,6 +81,11 @@ export async function getMeetupSpots(campusId: string): Promise<Result<MeetupSpo
     .returns<SpotRow[]>();
   if (error) return fail('UNKNOWN', 'Could not load meetup spots. Try again.');
   return ok(
-    (data ?? []).map((s) => ({ id: s.id, campusId: s.campus_id, name: s.name, description: s.description ?? '' })),
+    (data ?? []).map((s) => ({
+      id: s.id,
+      campusId: s.campus_id,
+      name: s.name,
+      description: s.description ?? '',
+    })),
   );
 }
