@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Archive, Heart, LogOut, Package, ShieldAlert, Tag, type LucideIcon } from 'lucide-react';
 import { VerifiedBadge } from '@/components/listing/badges';
@@ -60,7 +59,6 @@ function CardGrid({
 }
 
 export default function ProfilePage() {
-  const router = useRouter();
   const tz = useTimeZone();
   const { state: session } = useSession();
   const mine = useQuery(() => getMyListings(), []);
@@ -104,10 +102,9 @@ export default function ProfilePage() {
           disabled={out.pending}
           onClick={async () => {
             const r = await out.run();
-            if (r?.ok) {
-              router.push('/');
-              router.refresh();
-            } else if (r) toast.error(errorMessage(r.error));
+            // Full page load so the header drops the signed-in user (it reads the session once).
+            if (r?.ok) window.location.assign('/');
+            else if (r) toast.error(errorMessage(r.error));
           }}
         >
           <LogOut className="h-4 w-4" aria-hidden /> {out.pending ? 'Signing out…' : 'Sign out'}
