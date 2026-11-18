@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { toast } from 'sonner';
 import { Check, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,6 +38,10 @@ function VerifyFlow() {
   const send = useAction(requestVerificationCode);
   const check = useAction(verifyCode);
   const saveHousing = useAction(setHousingType);
+
+  // The header reads the session once when the app loads, so a client-side route change after
+  // sign-in leaves it showing "Verify". A full page load makes it read the new session.
+  const finish = () => window.location.replace(next);
 
   useEffect(() => heading.current?.focus(), [step]);
 
@@ -86,8 +89,7 @@ function VerifyFlow() {
     if (r?.ok) {
       // Log in: a returning student already picked housing, so skip straight to where they were going.
       if (r.data.user.housingType) {
-        toast.success(`Welcome back${r.data.user.firstName ? `, ${r.data.user.firstName}` : ''}.`);
-        router.replace(next);
+        finish();
         return;
       }
       // Sign up: first time through, ask where they live.
@@ -241,12 +243,12 @@ function VerifyFlow() {
               onClick={async () => {
                 if (!housing) return;
                 const r = await saveHousing.run(housing);
-                if (r?.ok) router.replace(next);
+                if (r?.ok) finish();
               }}
             >
               {saveHousing.pending ? 'Saving…' : 'Continue'}
             </Button>
-            <Button size="lg" variant="ghost" className="flex-1" onClick={() => router.replace(next)}>
+            <Button size="lg" variant="ghost" className="flex-1" onClick={finish}>
               Skip for now
             </Button>
           </div>

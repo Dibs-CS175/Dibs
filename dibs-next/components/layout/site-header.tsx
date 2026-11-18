@@ -6,6 +6,7 @@ import { Menu, MessageCircle, Package, ShieldCheck, User } from 'lucide-react';
 import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useFeature } from '@/lib/config/features';
 import { shortName } from '@/lib/format';
 import type { User as UserT } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -19,6 +20,7 @@ const LINKS = [
 /** Presentational header. The layout passes the session user (or null) in. */
 export function SiteHeader({ user, campusName }: { user: UserT | null; campusName: string | null }) {
   const pathname = usePathname();
+  const ordersOn = useFeature('orders');
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const link = (href: string, label: string) => (
     <Link
@@ -68,7 +70,7 @@ export function SiteHeader({ user, campusName }: { user: UserT | null; campusNam
           {user ? (
             <>
               {iconLink('/messages', 'Messages', MessageCircle)}
-              {iconLink('/orders', 'Orders', Package)}
+              {ordersOn ? iconLink('/orders', 'Orders', Package) : null}
               <Link
                 href="/profile"
                 className="ml-1 hidden min-h-[44px] items-center gap-2 rounded-full px-3 text-sm font-semibold hover:bg-white/10 md:inline-flex"
@@ -97,7 +99,7 @@ export function SiteHeader({ user, campusName }: { user: UserT | null; campusNam
                   ...(user
                     ? [
                         { href: '/messages', label: 'Messages' },
-                        { href: '/orders', label: 'Orders' },
+                        ...(ordersOn ? [{ href: '/orders', label: 'Orders' }] : []),
                         { href: '/profile', label: 'Profile' },
                       ]
                     : []),
