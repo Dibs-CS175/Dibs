@@ -3,12 +3,17 @@
 import { Package } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { OrderRow } from '@/components/orders/order-row';
-import { EmptyState, ErrorState, ListSkeleton } from '@/components/states';
+import { EmptyState, ErrorState, ListSkeleton, NotAvailableYet } from '@/components/states';
+import { useFeature } from '@/lib/config/features';
 import { useQuery } from '@/lib/hooks';
 import { getMyOrders } from '@/lib/queries/orders';
 import { errorMessage } from '@/lib/errorMessages';
 
 export default function OrdersPage() {
+  return useFeature('orders') ? <OrdersScreen /> : <NotAvailableYet what="Orders" />;
+}
+
+function OrdersScreen() {
   const { state, retry } = useQuery(() => getMyOrders(), []);
   return (
     <div className="container flex max-w-content flex-col gap-6 py-8 md:py-12">
