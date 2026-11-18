@@ -6,9 +6,6 @@ import type { Category, Condition, HousingFit, HousingType } from '@/lib/types';
 /** Seconds before the verification code can be sent again. */
 export const RESEND_SECONDS = 30;
 
-/** How long Hold to Dibs must be pressed, in milliseconds. */
-export const HOLD_TO_DIBS_MS = 600;
-
 /** Categories that trigger the prohibited-item warning in the Sell flow. */
 export const PROHIBITED_CATEGORIES: { id: string; label: string; reason: string }[] = [
   { id: 'mattress', label: 'Mattresses', reason: 'Health and pest rules.' },
@@ -61,11 +58,5 @@ export const HOUSING_TYPES: { id: HousingType; label: string }[] = [
   { id: 'off_campus', label: 'Off-campus' },
   { id: 'commuter', label: 'Commute from home' },
 ];
-
-export const FEATURE_FLAGS = {
-  summerHold: true,
-  parentPay: true,
-  admin: true,
-};
 
 export const QUICK_REPLIES = ['Still available?', 'Can we meet at 3?', 'Sending the meetup spot.'];

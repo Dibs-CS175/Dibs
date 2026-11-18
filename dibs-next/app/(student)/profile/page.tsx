@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Archive, Heart, LogOut, Package, ShieldAlert, Tag, type LucideIcon } from 'lucide-react';
 import { VerifiedBadge } from '@/components/listing/badges';
@@ -17,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toggleSave } from '@/lib/actions/listings';
 import { signOut, updateSettings } from '@/lib/actions/users';
 import { useTimeZone } from '@/lib/campus';
+import { useFeature } from '@/lib/config/features';
 import { errorMessage } from '@/lib/errorMessages';
 import { formatDate, shortName } from '@/lib/format';
 import { useAction, useQuery, type QueryState } from '@/lib/hooks';
@@ -24,8 +24,9 @@ import { getMyListings, getSavedListings } from '@/lib/queries/listings';
 import { getMyOrders } from '@/lib/queries/orders';
 import { getMyBooking } from '@/lib/queries/summerHold';
 import { getSettings } from '@/lib/queries/users';
+import { ok } from '@/lib/result';
 import { useSession } from '@/lib/session';
-import type { ListingCardView } from '@/lib/types';
+import type { ListingCardView, OrderSummary } from '@/lib/types';
 
 function CardGrid({
   q,
@@ -60,12 +61,17 @@ function CardGrid({
 }
 
 export default function ProfilePage() {
-  const router = useRouter();
   const tz = useTimeZone();
   const { state: session } = useSession();
   const mine = useQuery(() => getMyListings(), []);
   const saved = useQuery(() => getSavedListings(), []);
-  const orders = useQuery(() => getMyOrders(), []);
+  const ordersOn = useFeature('orders');
+  const referralsOn = useFeature('referrals');
+  // Skipped while orders are off, so the Live stub is never called.
+  const orders = useQuery(
+    () => (ordersOn ? getMyOrders() : Promise.resolve(ok<OrderSummary[]>([]))),
+    [ordersOn],
+  );
   const booking = useQuery(() => getMyBooking(), []);
   const settings = useQuery(() => getSettings(), []);
   const save = useAction(updateSettings);
@@ -94,7 +100,7 @@ export default function ProfilePage() {
               <span className="tabular">{user.tradesCount} trades</span>
               <span>Since {formatDate(user.memberSince, tz, { month: 'short', year: 'numeric' })}</span>
             </p>
-            <ReferralCode code={user.referralCode} />
+            {referralsOn ? <ReferralCode code={user.referralCode} /> : null}
           </div>
         ) : (
           <LoadingBlock className="h-24 w-72" />
@@ -104,10 +110,9 @@ export default function ProfilePage() {
           disabled={out.pending}
           onClick={async () => {
             const r = await out.run();
-            if (r?.ok) {
-              router.push('/');
-              router.refresh();
-            } else if (r) toast.error(errorMessage(r.error));
+            // Full page load so the header drops the signed-in user (it reads the session once).
+            if (r?.ok) window.location.assign('/');
+            else if (r) toast.error(errorMessage(r.error));
           }}
         >
           <LogOut className="h-4 w-4" aria-hidden /> {out.pending ? 'Signing out…' : 'Sign out'}
@@ -117,7 +122,7 @@ export default function ProfilePage() {
       <Tabs defaultValue="listings">
         <TabsList aria-label="Profile sections">
           <TabsTrigger value="listings">Listings</TabsTrigger>
-          <TabsTrigger value="orders">Orders</TabsTrigger>
+          {ordersOn ? <TabsTrigger value="orders">Orders</TabsTrigger> : null}
           <TabsTrigger value="saved">Saved</TabsTrigger>
           <TabsTrigger value="summer">Summer Hold</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
