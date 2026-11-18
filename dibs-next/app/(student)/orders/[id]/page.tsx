@@ -10,11 +10,12 @@ import { QuoteLines } from '@/components/listing/quote-lines';
 import { HandoffCodeDisplay, HandoffCodeEntry } from '@/components/orders/handoff';
 import { OrderStatusBadge } from '@/components/orders/order-status';
 import { Timeline } from '@/components/orders/timeline';
-import { EmptyState, ErrorState, PageSkeleton } from '@/components/states';
+import { EmptyState, ErrorState, NotAvailableYet, PageSkeleton } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { FormError } from '@/components/ui/field';
 import { cancelOrder, enterHandoffCode, payOrder } from '@/lib/actions/orders';
 import { useTimeZone } from '@/lib/campus';
+import { useFeature } from '@/lib/config/features';
 import { errorMessage } from '@/lib/errorMessages';
 import { formatDateTime, shortName } from '@/lib/format';
 import { useAction, useQuery } from '@/lib/hooks';
@@ -22,6 +23,10 @@ import { getOrder } from '@/lib/queries/orders';
 
 export default function OrderPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  return useFeature('orders') ? <OrderScreen id={id} /> : <NotAvailableYet what="Orders" />;
+}
+
+function OrderScreen({ id }: { id: string }) {
   const tz = useTimeZone();
   const { state, retry, setData } = useQuery(() => getOrder(id), [id]);
   const handoff = useAction(enterHandoffCode);

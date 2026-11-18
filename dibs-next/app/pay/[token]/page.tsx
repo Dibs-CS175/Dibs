@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { CheckCircle2, LinkIcon, ShieldCheck } from 'lucide-react';
 import { QuoteLines } from '@/components/listing/quote-lines';
-import { EmptyState, ErrorState, PageSkeleton } from '@/components/states';
+import { EmptyState, ErrorState, NotAvailableYet, PageSkeleton } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { FormError } from '@/components/ui/field';
 import { payAsParent } from '@/lib/actions/summerHold';
+import { useFeature } from '@/lib/config/features';
 import { errorMessage } from '@/lib/errorMessages';
 import { useAction, useQuery } from '@/lib/hooks';
 import { getParentPayView } from '@/lib/queries/summerHold';
@@ -14,6 +15,10 @@ import type { ParentPayView } from '@/lib/types';
 
 /** Public page a parent opens from a pay link. No sign-in. */
 export default function ParentPayPage({ params }: { params: { token: string } }) {
+  return useFeature('parentPay') ? <ParentPayScreen params={params} /> : <NotAvailableYet what="Parent pay" />;
+}
+
+function ParentPayScreen({ params }: { params: { token: string } }) {
   const { state, retry } = useQuery(() => getParentPayView(params.token), [params.token]);
   const pay = useAction(payAsParent);
   const [done, setDone] = useState<ParentPayView | null>(null);

@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { removeListing } from '@/lib/actions/listings';
 import { startConversation } from '@/lib/actions/messages';
 import { makeOffer } from '@/lib/actions/orders';
+import { useFeature } from '@/lib/config/features';
 import { formatMoney, timeAgo } from '@/lib/format';
 import { useAction, useQuery } from '@/lib/hooks';
 import { getListing, getSimilarListings } from '@/lib/queries/listings';
@@ -30,6 +31,7 @@ export default function ListingPage({ params }: { params: Promise<{ id: string }
   const signedIn = session.status === 'data' && session.data !== null;
   const { state, retry } = useQuery(() => getListing(id), [id]);
   const similar = useQuery(() => getSimilarListings(id), [id]);
+  const offersOn = useFeature('offers');
   const [offerOpen, setOfferOpen] = useState(false);
   const offer = useAction(makeOffer);
   const chat = useAction(startConversation);
@@ -107,10 +109,15 @@ export default function ListingPage({ params }: { params: Promise<{ id: string }
             <p className="rounded-card bg-sunk p-4 font-semibold">Someone already called dibs on this.</p>
           ) : (
             <div className="flex flex-col gap-3">
-              <div className="grid grid-cols-2 gap-3">
-                <Button variant="secondary" onClick={() => (signedIn ? setOfferOpen(true) : requireSignIn())}>
-                  <Tag className="h-4 w-4" aria-hidden /> Make an offer
-                </Button>
+              <div className={offersOn ? 'grid grid-cols-2 gap-3' : 'grid gap-3'}>
+                {offersOn ? (
+                  <Button
+                    variant="secondary"
+                    onClick={() => (signedIn ? setOfferOpen(true) : requireSignIn())}
+                  >
+                    <Tag className="h-4 w-4" aria-hidden /> Make an offer
+                  </Button>
+                ) : null}
                 <Button
                   variant="secondary"
                   disabled={chat.pending}
