@@ -4,15 +4,15 @@
 -- Idempotent: a no-op on the live project, where the table already exists.
 -- Shape is the table before reconcile_remote: that migration adds order_id, updated_at, campus_id,
 -- row-level security, policies and grants.
--- Types come from what MockPaymentProvider inserts (lib/payments.ts). id is text because the mock
--- provider writes ids like 'mock_pay_x1y2z3'. Check these against the live table before relying on it.
+-- Columns, nullability and defaults match the live table (checked 2026-11-18). id is text because the
+-- mock provider writes ids like 'mock_pay_x1y2z3'.
 
 create table if not exists public.payments (
   id text primary key,
-  amount_cents integer not null check (amount_cents > 0),
+  amount_cents integer not null,
   currency text not null default 'usd',
   source_token text not null,
   status text not null,
-  metadata jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default now()
+  metadata jsonb default '{}'::jsonb,
+  created_at timestamptz not null default timezone('utc'::text, now())
 );
