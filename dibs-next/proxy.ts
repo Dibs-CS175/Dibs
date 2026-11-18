@@ -89,8 +89,9 @@ export async function proxy(request: NextRequest) {
 
   // 3. Redirect non-admins away from /admin routes
   if (isAdminPath(pathname)) {
-    const metadataRole = user.app_metadata?.role ?? user.user_metadata?.role;
-    let isAdmin = metadataRole === 'admin';
+    // app_metadata is set by the server only. user_metadata is never read here: a signed-in
+    // user can edit their own, so it cannot decide who is an admin.
+    let isAdmin = user.app_metadata?.role === 'admin';
 
     if (!isAdmin) {
       const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).maybeSingle();
