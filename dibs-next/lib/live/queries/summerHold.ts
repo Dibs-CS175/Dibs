@@ -20,17 +20,20 @@ export async function getMyBooking(): Promise<Result<MyBooking | null>> {
       return fail('NOT_SIGNED_IN', 'Sign in to view your booking.');
     }
 
-  const { data: bookingRow, error: bookingError } = await supabase
+  // Each pass through the sign-up Options step saves a new draft. Show the newest booking that was
+  // paid for, so a draft abandoned later cannot hide it; fall back to the newest draft.
+  const { data: bookingRows, error: bookingError } = await supabase
     .from('summer_hold_bookings')
     .select('*')
     .eq('user_id', authData.user.id)
     .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(50);
 
   if (bookingError) {
     return fail('UNKNOWN', 'Could not retrieve your booking.');
   }
+
+  const bookingRow = bookingRows.find((r) => r.status !== 'draft') ?? bookingRows[0];
 
   if (!bookingRow) {
     return ok(null);
