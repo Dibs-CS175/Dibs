@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { AlertTriangle, RefreshCw, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, Clock, RefreshCw, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -39,6 +39,20 @@ export function EmptyState({
           {actionLabel}
         </Button>
       )}
+    </div>
+  );
+}
+
+/** Full-page state for a route whose feature is turned off in lib/config/features.ts. */
+export function NotAvailableYet({ what }: { what: string }) {
+  return (
+    <div className="container max-w-content py-16">
+      <EmptyState
+        icon={Clock}
+        text={`${what} isn’t available yet.`}
+        actionLabel="Browse listings"
+        href="/browse"
+      />
     </div>
   );
 }
