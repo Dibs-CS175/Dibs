@@ -13,7 +13,7 @@
     "stubs": "node dibs-next/scripts/count-stubs.mjs"
   },
   "engines": {
-    "node": ">=18.17"
+    "node": "24.x"
   },
   "devDependencies": {
     "supabase": "^2.121.0"
