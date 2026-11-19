@@ -7,6 +7,8 @@ export interface PaymentProvider {
     currency?: string;
     sourceToken: string;
     orderId?: string;
+    /** Summer Hold booking this payment is for. A payment has an order or a booking, not both. */
+    bookingId?: string;
     metadata?: Record<string, string>;
   }): Promise<Result<{ paymentId: string; status: string }>>;
 }
@@ -17,12 +19,15 @@ export class MockPaymentProvider implements PaymentProvider {
     currency = 'usd',
     sourceToken,
     orderId,
+    bookingId,
     metadata,
   }: {
     amountCents: number;
     currency?: string;
     sourceToken: string;
     orderId?: string;
+    /** Summer Hold booking this payment is for. A payment has an order or a booking, not both. */
+    bookingId?: string;
     metadata?: Record<string, string>;
   }): Promise<Result<{ paymentId: string; status: string }>> {
     if (amountCents <= 0) {
@@ -44,6 +49,8 @@ export class MockPaymentProvider implements PaymentProvider {
       const { error } = await supabase.from('payments').insert({
         id: paymentId,
         order_id: orderId ?? null,
+        // Only sent for booking payments, so order payments do not depend on the booking_id column.
+        ...(bookingId ? { booking_id: bookingId } : {}),
         amount_cents: amountCents,
         currency,
         source_token: sourceToken,

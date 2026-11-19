@@ -9,6 +9,7 @@ import { now } from '@/lib/clock';
 import rawTables from '@/lib/fixtures/priceTable.json';
 import { notImplemented } from '@/lib/live/not-implemented';
 import { getSummerHoldQuote } from '@/lib/live/queries/pricing';
+import { rpcResult } from '@/lib/live/rpc';
 import { payments } from '@/lib/payments';
 import { currentTier, type PriceRow } from '@/lib/pricing';
 import { fail, ok, type Result } from '@/lib/result';
@@ -162,18 +163,11 @@ const supabase = await createSupabaseServerClient();
   }
 
   if (input.fullService && input.packingSlotId) {
-    const { data: currentSlot } = await supabase
-      .from('slots')
-      .select('booked')
-      .eq('id', input.packingSlotId)
-      .single();
-
-    if (currentSlot) {
-      await supabase
-        .from('slots')
-        .update({ booked: currentSlot.booked + 1 })
-        .eq('id', input.packingSlotId);
-    }
+    // reserve_packing_slot checks capacity and takes the place in one statement, so two students
+    // cannot both get the last one. When the slot is full it also removes this draft.
+    const { data, error } = await supabase.rpc('reserve_packing_slot', { p_booking_id: bookingRow.id });
+    const held = rpcResult<{ slot_id: string }>(data, error, 'Could not hold your packing appointment.');
+    if (!held.ok) return held;
   }
 
   return ok({
@@ -251,6 +245,7 @@ export async function payRegistration(
   const charge = await payments.charge({
     amountCents: tier.cents,
     sourceToken: 'mock_card',
+    bookingId,
     metadata: { kind: 'summer_hold_registration', bookingId },
   });
   if (!charge.ok) {
