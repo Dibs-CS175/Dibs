@@ -6,6 +6,7 @@
 // Replace a stub's body with real code and delete its STUB line; `npm run stubs` counts what is left.
 
 import { notImplemented } from '@/lib/live/not-implemented';
+import { loadSellers } from '@/lib/live/sellers';
 import { fail, ok, type Result } from '@/lib/result';
 import { createSupabaseServerClient } from '@/lib/supabase/server'; // necessary to access database
 import type { ListingCardView, ListingDetail, ListingSearch, Page } from '@/lib/types';
@@ -45,7 +46,7 @@ export async function searchListings(params: ListingSearch): Promise<Result<Page
   let query = supabase
     .from('listings')
     .select(
-      'id, campus_id, seller_id, source, title, description, price_cents, condition, category, housing_fit, status, created_at, listing_photos(photo_url, position), seller:users!listings_seller_id_fkey(id, first_name, last_initial, verified), saved_listings(listing_id)',
+      'id, campus_id, seller_id, source, title, description, price_cents, condition, category, housing_fit, status, created_at, listing_photos(photo_url, position), saved_listings(listing_id)',
     )
     .eq('campus_id', profile.campus_id)
     .eq('status', 'active');
@@ -73,9 +74,13 @@ export async function searchListings(params: ListingSearch): Promise<Result<Page
   const { data, error } = await query.range(offset, offset + pageSize);
   if (error) return fail('UNKNOWN', 'Could not search listings.');
 
+  const sellers = await loadSellers(
+    supabase,
+    data.map((row) => row.seller_id),
+  );
   const hasMore = data.length > pageSize;
   const items: ListingCardView[] = data.slice(0, pageSize).map((row) => {
-    const seller = Array.isArray(row.seller) ? row.seller[0] : row.seller;
+    const seller = row.seller_id ? sellers.get(row.seller_id) : undefined;
     const photos = [...row.listing_photos].sort((a, b) => a.position - b.position);
 
     return {
@@ -142,15 +147,8 @@ export async function getListing(listingId: string): Promise<Result<ListingDetai
   if (!listing) return fail('NOT_FOUND', 'Listing not found.');
   if (!listing.seller_id) return fail('NOT_FOUND', 'Seller profile not found.');
 
-  const { data: seller, error: sellerError } = await supabase
-    .from('users')
-    .select(
-      'id, campus_id, first_name, last_initial, email, housing_type, role, verified, trades_count, member_since, referral_code',
-    )
-    .eq('id', listing.seller_id)
-    .maybeSingle();
-
-  if (sellerError) return fail('UNKNOWN', 'Could not retrieve the seller profile.');
+  // Only the public part of the seller's profile is readable (see lib/live/sellers.ts).
+  const seller = (await loadSellers(supabase, [listing.seller_id])).get(listing.seller_id);
   if (!seller) return fail('NOT_FOUND', 'Seller profile not found.');
 
   const photos = [...listing.listing_photos].sort((a, b) => a.position - b.position);
@@ -173,16 +171,18 @@ export async function getListing(listingId: string): Promise<Result<ListingDetai
     },
     seller: {
       id: seller.id,
-      campusId: seller.campus_id,
+      // Sellers come from the signed-in user's campus, which is the listing's campus.
+      campusId: listing.campus_id,
       firstName: seller.first_name,
       lastInitial: seller.last_initial,
-      email: seller.email,
-      housingType: seller.housing_type,
-      role: seller.role,
+      // Private fields are never read for another student, so they are left blank.
+      email: '',
+      housingType: null,
+      role: 'student',
       verified: seller.verified,
       tradesCount: seller.trades_count,
       memberSince: seller.member_since,
-      referralCode: seller.referral_code,
+      referralCode: '',
     },
     saved: listing.saved_listings.length > 0,
     isOwn: listing.seller_id === authData.user.id,
@@ -208,7 +208,7 @@ export async function getMyListings(): Promise<Result<ListingCardView[]>> {
   const { data, error } = await supabase
     .from('listings')
     .select(
-      'id, campus_id, seller_id, source, title, description, price_cents, condition, category, housing_fit, status, created_at, listing_photos(photo_url, position), seller:users!listings_seller_id_fkey(id, first_name, last_initial, verified), saved_listings(listing_id)',
+      'id, campus_id, seller_id, source, title, description, price_cents, condition, category, housing_fit, status, created_at, listing_photos(photo_url, position), saved_listings(listing_id)',
     )
     .eq('campus_id', profile.campus_id)
     .eq('seller_id', authData.user.id)
@@ -216,9 +216,14 @@ export async function getMyListings(): Promise<Result<ListingCardView[]>> {
 
   if (error) return fail('UNKNOWN', 'Could not retrieve your listings.');
 
+  const sellers = await loadSellers(
+    supabase,
+    data.map((row) => row.seller_id),
+  );
+
   return ok(
     data.map((row) => {
-      const seller = Array.isArray(row.seller) ? row.seller[0] : row.seller;
+      const seller = row.seller_id ? sellers.get(row.seller_id) : undefined;
       const photos = [...row.listing_photos].sort((a, b) => a.position - b.position);
 
       return {
@@ -278,7 +283,7 @@ export async function getSavedListings(): Promise<Result<ListingCardView[]>> {
   const { data, error } = await supabase
     .from('listings')
     .select(
-      'id, campus_id, seller_id, source, title, description, price_cents, condition, category, housing_fit, status, created_at, listing_photos(photo_url, position), seller:users!listings_seller_id_fkey(id, first_name, last_initial, verified)',
+      'id, campus_id, seller_id, source, title, description, price_cents, condition, category, housing_fit, status, created_at, listing_photos(photo_url, position)',
     )
     .eq('campus_id', profile.campus_id)
     .eq('status', 'active')
@@ -290,9 +295,14 @@ export async function getSavedListings(): Promise<Result<ListingCardView[]>> {
 
   if (error) return fail('UNKNOWN', 'Could not retrieve your saved listings.');
 
+  const sellers = await loadSellers(
+    supabase,
+    data.map((row) => row.seller_id),
+  );
+
   return ok(
     data.map((row) => {
-      const seller = Array.isArray(row.seller) ? row.seller[0] : row.seller;
+      const seller = row.seller_id ? sellers.get(row.seller_id) : undefined;
       const photos = [...row.listing_photos].sort((a, b) => a.position - b.position);
 
       return {
@@ -355,7 +365,7 @@ export async function getSimilarListings(listingId: string): Promise<Result<List
   const { data, error } = await supabase
     .from('listings')
     .select(
-      'id, campus_id, seller_id, source, title, description, price_cents, condition, category, housing_fit, status, created_at, listing_photos(photo_url, position), seller:users!listings_seller_id_fkey(id, first_name, last_initial, verified), saved_listings(listing_id)',
+      'id, campus_id, seller_id, source, title, description, price_cents, condition, category, housing_fit, status, created_at, listing_photos(photo_url, position), saved_listings(listing_id)',
     )
     .eq('campus_id', profile.campus_id)
     .eq('status', 'active')
@@ -365,9 +375,14 @@ export async function getSimilarListings(listingId: string): Promise<Result<List
 
   if (error) return fail('UNKNOWN', 'Could not retrieve similar listings.');
 
+  const sellers = await loadSellers(
+    supabase,
+    data.map((row) => row.seller_id),
+  );
+
   return ok(
     data.slice(0, 6).map((row) => {
-      const seller = Array.isArray(row.seller) ? row.seller[0] : row.seller;
+      const seller = row.seller_id ? sellers.get(row.seller_id) : undefined;
       const photos = [...row.listing_photos].sort((a, b) => a.position - b.position);
 
       return {
