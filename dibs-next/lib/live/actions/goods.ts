@@ -9,14 +9,7 @@ import { now } from '@/lib/clock';
 import { CATEGORIES } from '@/lib/config/app';
 import { fail, ok, type Result } from '@/lib/result';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import type {
-Category,
-  Condition,
-  GoodsIntakeInput,
-  GoodsItem,
-  GoodsStatus,
-  HousingFit,
-} from '@/lib/types';
+import type { Category, Condition, GoodsIntakeInput, GoodsItem, GoodsStatus, HousingFit } from '@/lib/types';
 
 const HOLD_DURATION_DAYS = 30;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -87,13 +80,9 @@ function mapRowToGoodsItem(
   listing: JoinedListing | null | undefined,
   fallbackItem?: Partial<GoodsItem>,
 ): GoodsItem {
-  const sortedPhotos = [...(listing?.listing_photos ?? [])].sort(
-    (a, b) => a.position - b.position,
-  );
+  const sortedPhotos = [...(listing?.listing_photos ?? [])].sort((a, b) => a.position - b.position);
   const photos =
-    sortedPhotos.length > 0
-      ? sortedPhotos.map((p) => p.photo_url)
-      : (fallbackItem?.photos ?? []);
+    sortedPhotos.length > 0 ? sortedPhotos.map((p) => p.photo_url) : (fallbackItem?.photos ?? []);
 
   return {
     id: row.id,
@@ -118,9 +107,7 @@ function mapRowToGoodsItem(
         : {}),
     photos,
     priceCents: listing?.price_cents ?? fallbackItem?.priceCents ?? 0,
-    ...(row.cost_cents !== null && row.cost_cents !== undefined
-      ? { costCents: row.cost_cents }
-      : {}),
+    ...(row.cost_cents !== null && row.cost_cents !== undefined ? { costCents: row.cost_cents } : {}),
     ...(row.serial_number ? { serialNumber: row.serial_number } : {}),
     ...(row.hold_until ? { holdUntil: row.hold_until } : {}),
     status: row.status,
@@ -354,11 +341,7 @@ export async function listGoods(item: GoodsItem): Promise<Result<GoodsItem>> {
   }
 
   return ok(
-    mapRowToGoodsItem(
-      { ...updatedGoods, status: updatedGoods.status as GoodsStatus },
-      joinedListing,
-      item,
-    ),
+    mapRowToGoodsItem({ ...updatedGoods, status: updatedGoods.status as GoodsStatus }, joinedListing, item),
   );
 }
 

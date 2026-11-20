@@ -16,7 +16,7 @@ import type { ListingCardView, ListingDetail, ListingSearch, Page } from '@/lib/
  * the first when no cursor is passed, then the next page for each `nextCursor`.
  */
 
-// returns a page containing a large list of listings. 
+// returns a page containing a large list of listings.
 export async function searchListings(params: ListingSearch): Promise<Result<Page<ListingCardView>>> {
   const pageSize = 12;
   const supabase = await createSupabaseServerClient();

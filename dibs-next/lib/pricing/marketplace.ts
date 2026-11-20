@@ -16,16 +16,9 @@ export function checkoutLines(priceCents: number, row: PriceRow): CheckoutLines 
     taxCents,
     totalCents,
     lines: [
-      { key: 
-		'item', 
-		label: 'Item', 
-		cents: priceCents },
-      { key: 'buyer_fee', 
-		label: 'Buyer fee', 
-		cents: buyerFeeCents },
-      { key: 'tax', 
-		label: 'Sales tax', 
-		cents: taxCents },
+      { key: 'item', label: 'Item', cents: priceCents },
+      { key: 'buyer_fee', label: 'Buyer fee', cents: buyerFeeCents },
+      { key: 'tax', label: 'Sales tax', cents: taxCents },
     ],
   };
 }

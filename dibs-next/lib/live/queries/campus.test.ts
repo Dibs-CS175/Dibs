@@ -22,8 +22,18 @@ vi.mock('@/lib/supabase/server', () => ({
 
 import { getCampus, getCurrentCampus, getMeetupSpots } from './campus';
 
-const riverside = { id: 'riverside', name: 'Riverside', email_domain: 'ucr.edu', timezone: 'America/Los_Angeles' };
-const csusb = { id: 'san-bernardino', name: 'San Bernardino', email_domain: 'csusb.edu', timezone: 'America/Los_Angeles' };
+const riverside = {
+  id: 'riverside',
+  name: 'Riverside',
+  email_domain: 'ucr.edu',
+  timezone: 'America/Los_Angeles',
+};
+const csusb = {
+  id: 'san-bernardino',
+  name: 'San Bernardino',
+  email_domain: 'csusb.edu',
+  timezone: 'America/Los_Angeles',
+};
 const code = (r: { ok: boolean; error?: { code: string } }) => (r.ok ? null : r.error?.code);
 
 afterEach(() => {

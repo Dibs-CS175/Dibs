@@ -1,8 +1,8 @@
 // Integer-cent rate math. Rates are in basis points: 875 = 8.75%, 500 = 5%
 import { PricingError } from './types';
 
- // Returns amountCents x bps / 10000, rounded to the nearest cent, halves rounding up
- // Non-negative integer amounts only. For a refund, call it on the positive amount and negate the result
+// Returns amountCents x bps / 10000, rounded to the nearest cent, halves rounding up
+// Non-negative integer amounts only. For a refund, call it on the positive amount and negate the result
 export function applyBps(amountCents: number, bps: number): number {
   if (!Number.isInteger(amountCents) || amountCents < 0) {
     throw new PricingError(

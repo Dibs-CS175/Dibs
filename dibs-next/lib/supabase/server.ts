@@ -1,7 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-
 //////////////////////
 //To get the access to the supabase from the non-public reach.
 

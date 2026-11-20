@@ -5,8 +5,6 @@
 // Keep every signature as it is; lib/queries/summerHold.ts checks it against the demo version.
 // Replace a stub's body with real code and delete its STUB line; `npm run stubs` counts what is left.
 
-
-
 import { notImplemented } from '@/lib/live/not-implemented';
 import { fail, ok, type Result } from '@/lib/result';
 import { createSupabaseServerClient } from '@/lib/supabase/server'; // necessary to access database
@@ -15,10 +13,10 @@ import type { AddOnKey, MyBooking, ParentPayView, SlotView, SummerHoldBooking } 
 /** The signed-in student's booking for this summer, or null. Flags come from the backend. */
 export async function getMyBooking(): Promise<Result<MyBooking | null>> {
   const supabase = await createSupabaseServerClient();
-    const { data: authData, error: authError } = await supabase.auth.getUser();
-    if (authError || !authData.user) {
-      return fail('NOT_SIGNED_IN', 'Sign in to view your booking.');
-    }
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError || !authData.user) {
+    return fail('NOT_SIGNED_IN', 'Sign in to view your booking.');
+  }
 
   // Each pass through the sign-up Options step saves a new draft. Show the newest booking that was
   // paid for, so a draft abandoned later cannot hide it; fall back to the newest draft.
@@ -127,7 +125,7 @@ export async function getPackingSlots(campusId: string): Promise<Result<SlotView
 
 /** Move-out pickup windows for a campus. */
 export async function getPickupSlots(campusId: string): Promise<Result<SlotView[]>> {
-    const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from('slots')
     .select('*')

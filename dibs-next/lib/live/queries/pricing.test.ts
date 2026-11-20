@@ -133,7 +133,9 @@ describe('getSummerHoldQuote', () => {
 
   it('returns pricing errors instead of throwing', async () => {
     asOf('2027-04-01T12:00:00-07:00');
-    expect(errorCode(await getSummerHoldQuote({ ...input, standardCount: 0, largeCount: 0 }))).toBe('VALIDATION');
+    expect(errorCode(await getSummerHoldQuote({ ...input, standardCount: 0, largeCount: 0 }))).toBe(
+      'VALIDATION',
+    );
     expect(errorCode(await getSummerHoldQuote({ ...input, campusId: 'nowhere' }))).toBe('NOT_FOUND');
   });
 });
